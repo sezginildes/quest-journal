@@ -1059,7 +1059,7 @@ async function signOut() {
 
 // Karakter verisini Supabase'den yükle
 async function loadCharacterFromCloud(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await sbClient
     .from('characters')
     .select('data')
     .eq('user_id', userId)
@@ -1070,7 +1070,7 @@ async function loadCharacterFromCloud(userId) {
 
 // Karakter verisini Supabase'e kaydet
 async function saveCharacterToCloud(userId, characterData) {
-  await supabase
+  await sbClient
     .from('characters')
     .upsert({ user_id: userId, data: characterData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
 }
