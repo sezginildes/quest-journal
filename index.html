@@ -1017,7 +1017,7 @@ body {
 
 const SUPABASE_URL = 'https://phvjvktkttchiqmtozuj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BBZuPl7Q7lfWjNKcnUsZqA_SjTJE5YF';
-const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let sbClient = null;
 
 let currentUser = null;
 
@@ -1098,7 +1098,8 @@ async function logToSupabase(data) {
 
 // Auth başlat
 async function initAuth() {
-  // Mevcut session kontrol et
+  // Client'ı burada initialize et — CDN yüklenmiş olur
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: { session } } = await sbClient.auth.getSession();
   
   if (session?.user) {
