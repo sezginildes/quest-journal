@@ -342,10 +342,12 @@ body {
   width: 4px;
   border-radius: 4px 0 0 4px;
 }
-.quest-card.cat-health::before { background: #c0392b; }
-.quest-card.cat-intelligence::before { background: #2980b9; }
-.quest-card.cat-money::before { background: #f39c12; }
-.quest-card.cat-relationships::before { background: #8e44ad; }
+.quest-card.cat-beden::before   { background: #c0392b; }
+.quest-card.cat-zihin::before   { background: #2980b9; }
+.quest-card.cat-kariyer::before { background: #d4af37; }
+.quest-card.cat-iliski::before  { background: #8e44ad; }
+.quest-card.cat-anlam::before   { background: #16a085; }
+.quest-card.cat-sistem::before  { background: #2c3e50; }
 
 .quest-title {
   font-family: 'Cinzel', serif;
@@ -394,10 +396,12 @@ body {
   border-radius: 10px;
   font-family: 'Cinzel', serif;
 }
-.cat-health { background: rgba(192,57,43,0.1); color: #c0392b; }
-.cat-intelligence { background: rgba(41,128,185,0.1); color: #2980b9; }
-.cat-money { background: rgba(243,156,18,0.1); color: #e67e22; }
-.cat-relationships { background: rgba(142,68,173,0.1); color: #8e44ad; }
+.cat-beden   { background: rgba(192,57,43,0.1);  color: #c0392b; }
+.cat-zihin   { background: rgba(41,128,185,0.1); color: #2980b9; }
+.cat-kariyer { background: rgba(212,175,55,0.1); color: #b7950b; }
+.cat-iliski  { background: rgba(142,68,173,0.1); color: #8e44ad; }
+.cat-anlam   { background: rgba(22,160,133,0.1); color: #16a085; }
+.cat-sistem  { background: rgba(44,62,80,0.1);   color: #2c3e50; }
 
 .urgent-seal {
   position: absolute;
@@ -1157,45 +1161,61 @@ const DIFFICULTIES = {
 };
 
 const CATEGORIES = {
-  health:        { label: 'Sağlık',       icon: '❤️', color: '#c0392b', fill: '#e74c3c' },
-  intelligence:  { label: 'Zeka',         icon: '📖', color: '#2980b9', fill: '#3498db' },
-  money:         { label: 'Para',         icon: '💰', color: '#e67e22', fill: '#f39c12' },
-  relationships: { label: 'İlişkiler',    icon: '💞', color: '#8e44ad', fill: '#9b59b6' }
+  beden:   { label: 'Beden',       icon: '❤️', color: '#c0392b', fill: '#e74c3c' },
+  zihin:   { label: 'Zihin',       icon: '🧠', color: '#2980b9', fill: '#3498db' },
+  kariyer: { label: 'Kariyer & Para', icon: '💰', color: '#d4af37', fill: '#f39c12' },
+  iliski:  { label: 'İlişkiler',   icon: '💞', color: '#8e44ad', fill: '#9b59b6' },
+  anlam:   { label: 'Anlam & Ruh', icon: '🌱', color: '#16a085', fill: '#1abc9c' },
+  sistem:  { label: 'Sistem & Üretim', icon: '⚙️', color: '#2c3e50', fill: '#546e7a' }
 };
 
 const SUB_CATEGORIES = {
-  health: [
+  beden: [
     { id: 'fizik',   label: '🏋️ Fiziksel Kondisyon' },
     { id: 'uyku',    label: '😴 Uyku & Dinlenme' },
     { id: 'beslen',  label: '🥗 Beslenme' },
-    { id: 'mental',  label: '🧘 Zihinsel Sağlık' }
+    { id: 'mental',  label: '🧘 Stres & Nefes' }
   ],
-  intelligence: [
-    { id: 'kocluk',  label: '🎓 Koçluk & Pedagoji' },
-    { id: 'ai',      label: '🤖 AI & Prompt Engineering' },
-    { id: 'psikoloji',label: '🧠 Psikoloji & Nörobilim' },
-    { id: 'dil',     label: '🌍 Dil & İletişim' }
+  zihin: [
+    { id: 'kocluk',    label: '🎓 Koçluk & Pedagoji' },
+    { id: 'ai',        label: '🤖 AI & Prompt Engineering' },
+    { id: 'psikoloji', label: '🔬 Psikoloji & Nörobilim' },
+    { id: 'dil',       label: '🌍 Dil & İletişim' }
   ],
-  money: [
-    { id: 'dershane',label: '🏫 Dershane Performansı' },
-    { id: 'b2b',     label: '📦 B2B Ürün (YSSE)' },
-    { id: 'freelance',label: '💼 Freelance & Danışmanlık' },
-    { id: 'icerik',  label: '📣 LinkedIn & X İçeriği' }
+  kariyer: [
+    { id: 'dershane',  label: '🏫 Dershane Performansı' },
+    { id: 'b2b',       label: '📦 B2B Ürün (YSSE)' },
+    { id: 'freelance', label: '💼 Freelance & Danışmanlık' },
+    { id: 'icerik',    label: '📣 LinkedIn & X İçeriği' }
   ],
-  relationships: [
-    { id: 'ogrenci', label: '👨‍🎓 Öğrenci İlişkileri' },
-    { id: 'veli',    label: '👨‍👩‍👦 Veli İletişimi' },
-    { id: 'network', label: '🤝 Profesyonel Network' },
-    { id: 'kisisel', label: '❤️ Kişisel İlişkiler' }
+  iliski: [
+    { id: 'ogrenci',   label: '👨‍🎓 Öğrenci İlişkileri' },
+    { id: 'veli',      label: '👨‍👩‍👦 Veli İletişimi' },
+    { id: 'network',   label: '🤝 Profesyonel Network' },
+    { id: 'kisisel',   label: '❤️ Kişisel İlişkiler' }
+  ],
+  anlam: [
+    { id: 'degerler',  label: '🌟 Değerler & İnanç' },
+    { id: 'vizyon',    label: '🔭 Uzun Vadeli Vizyon' },
+    { id: 'minnet',    label: '🙏 Minnet & Farkındalık' },
+    { id: 'kimlik',    label: '🎭 Kimlik & Anlam' }
+  ],
+  sistem: [
+    { id: 'kod',       label: '💻 Kod & Araç Geliştirme' },
+    { id: 'notion',    label: '📋 Notion & Workspace' },
+    { id: 'otomasyon', label: '🔄 Otomasyon (Make/Supabase)' },
+    { id: 'icerik2',   label: '✍️ İçerik Üretimi' }
   ]
 };
 
 const CLASSES = [
-  { id: 'warrior',   icon: '⚔️', name: 'Savaşçı',   bonus: '+20% Sağlık XP\'si',      stat: 'health', mult: 1.2 },
-  { id: 'scholar',   icon: '📜', name: 'Alim',       bonus: '+20% Zeka XP\'si',         stat: 'intelligence', mult: 1.2 },
-  { id: 'merchant',  icon: '💎', name: 'Tüccar',     bonus: '+20% Para XP\'si',         stat: 'money', mult: 1.2 },
-  { id: 'diplomat',  icon: '🕊️', name: 'Diplomat',   bonus: '+20% İlişkiler XP\'si',    stat: 'relationships', mult: 1.2 },
-  { id: 'adventurer',icon: '🗺️', name: 'Maceracı',   bonus: '+5% Tüm XP',              stat: 'all', mult: 1.05 }
+  { id: 'warrior',   icon: '⚔️', name: 'Savaşçı',    bonus: '+20% Beden XP\'si',       stat: 'beden',   mult: 1.2 },
+  { id: 'scholar',   icon: '📜', name: 'Alim',        bonus: '+20% Zihin XP\'si',       stat: 'zihin',   mult: 1.2 },
+  { id: 'merchant',  icon: '💎', name: 'Tüccar',      bonus: '+20% Kariyer XP\'si',     stat: 'kariyer', mult: 1.2 },
+  { id: 'diplomat',  icon: '🕊️', name: 'Diplomat',    bonus: '+20% İlişkiler XP\'si',   stat: 'iliski',  mult: 1.2 },
+  { id: 'sage',      icon: '🌿', name: 'Bilge',       bonus: '+20% Anlam XP\'si',       stat: 'anlam',   mult: 1.2 },
+  { id: 'engineer',  icon: '⚙️', name: 'Mühendis',   bonus: '+20% Sistem XP\'si',      stat: 'sistem',  mult: 1.2 },
+  { id: 'adventurer',icon: '🗺️', name: 'Maceracı',    bonus: '+5% Tüm XP',             stat: 'all',     mult: 1.05 }
 ];
 
 const LEVEL_FLAVORS = [
@@ -1224,15 +1244,18 @@ const DEFAULT_REWARDS = [
 ];
 
 const ACHIEVEMENTS = [
-  { id: 'first', icon: '🌱', name: 'İlk Adım', desc: 'İlk görevini tamamla', condition: (s) => s.totalCompleted >= 1 },
-  { id: 'apprentice', icon: '📜', name: 'Çırak', desc: 'Seviye 5\'e ulaş', condition: (s) => s.level >= 5 },
-  { id: 'journeyman', icon: '⚔️', name: 'Kalfa', desc: 'Seviye 10\'a ulaş', condition: (s) => s.level >= 10 },
-  { id: 'streak7', icon: '🔥', name: 'Ateş Haftası', desc: '7 günlük seri', condition: (s) => s.streak >= 7 },
-  { id: 'streak30', icon: '🌟', name: 'Şanlı Ay', desc: '30 günlük seri', condition: (s) => s.streak >= 30 },
-  { id: 'dragonslayer', icon: '🐉', name: 'Ejderha Avcısı', desc: 'Efsanevi görev tamamla', condition: (s) => s.completedLegendary >= 1 },
-  { id: 'health50', icon: '💪', name: 'Demir Beden', desc: '50 Sağlık görevi', condition: (s) => (s.catCounts?.health || 0) >= 50 },
-  { id: 'intel50', icon: '🧠', name: 'Büyücü Zihni', desc: '50 Zeka görevi', condition: (s) => (s.catCounts?.intelligence || 0) >= 50 },
-  { id: 'speedrun', icon: '⚡', name: 'Hız Koşucusu', desc: 'Bir günde 10 görev', condition: (s) => s.maxQuestsInDay >= 10 },
+  { id: 'first',       icon: '🌱', name: 'İlk Adım',       desc: 'İlk görevini tamamla',          condition: (s) => s.totalCompleted >= 1 },
+  { id: 'apprentice',  icon: '📜', name: 'Çırak',           desc: 'Seviye 5\'e ulaş',              condition: (s) => s.level >= 5 },
+  { id: 'journeyman',  icon: '⚔️', name: 'Kalfa',           desc: 'Seviye 10\'a ulaş',             condition: (s) => s.level >= 10 },
+  { id: 'streak7',     icon: '🔥', name: 'Ateş Haftası',    desc: '7 günlük seri',                 condition: (s) => s.streak >= 7 },
+  { id: 'streak30',    icon: '🌟', name: 'Şanlı Ay',        desc: '30 günlük seri',                condition: (s) => s.streak >= 30 },
+  { id: 'dragonslayer',icon: '🐉', name: 'Ejderha Avcısı',  desc: 'Efsanevi görev tamamla',        condition: (s) => s.completedLegendary >= 1 },
+  { id: 'beden50',     icon: '💪', name: 'Demir Beden',     desc: '50 Beden görevi',               condition: (s) => (s.catCounts?.beden || 0) >= 50 },
+  { id: 'zihin50',     icon: '🧠', name: 'Derin Zihin',     desc: '50 Zihin görevi',               condition: (s) => (s.catCounts?.zihin || 0) >= 50 },
+  { id: 'kariyer50',   icon: '💰', name: 'Para Ustası',     desc: '50 Kariyer görevi',             condition: (s) => (s.catCounts?.kariyer || 0) >= 50 },
+  { id: 'anlam50',     icon: '🌿', name: 'Ruhun Efendisi',  desc: '50 Anlam görevi',               condition: (s) => (s.catCounts?.anlam || 0) >= 50 },
+  { id: 'sistem50',    icon: '⚙️', name: 'Sistem Mimarı',   desc: '50 Sistem görevi',              condition: (s) => (s.catCounts?.sistem || 0) >= 50 },
+  { id: 'speedrun',    icon: '⚡', name: 'Hız Koşucusu',    desc: 'Bir günde 10 görev',            condition: (s) => s.maxQuestsInDay >= 10 },
 ];
 
 function loadState() {
@@ -1264,7 +1287,7 @@ function defaultState(name, charClass, title) {
     lastQuestDate: null,
     totalCompleted: 0,
     completedLegendary: 0,
-    catCounts: { health: 0, intelligence: 0, money: 0, relationships: 0 },
+    catCounts: { beden: 0, zihin: 0, kariyer: 0, iliski: 0, anlam: 0, sistem: 0 },
     todayCount: 0,
     todayDate: null,
     maxQuestsInDay: 0,
@@ -1412,7 +1435,7 @@ function completeQuest(questId) {
   if (quest.difficulty === 'legendary') state.completedLegendary++;
 
   // Stat gain
-  const catToStat = { health: 'vitality', intelligence: 'wisdom', money: 'fortune', relationships: 'charisma' };
+  const catToStat = { beden: 'vitality', zihin: 'wisdom', kariyer: 'fortune', iliski: 'charisma', anlam: 'wisdom', sistem: 'fortune' };
   const statKey = catToStat[quest.category];
   if (statKey && state.stats[statKey] < 100) state.stats[statKey] = Math.min(100, state.stats[statKey] + 1);
 
@@ -1601,7 +1624,7 @@ function undoFromLog(logIdx) {
   const xpToRemove = quest.xpGained || DIFFICULTIES[quest.difficulty]?.xp || 0;
   state.xp = Math.max(0, state.xp - xpToRemove);
   // Stat geri al
-  const catToStat = { health: 'vitality', intelligence: 'wisdom', money: 'fortune', relationships: 'charisma' };
+  const catToStat = { beden: 'vitality', zihin: 'wisdom', kariyer: 'fortune', iliski: 'charisma', anlam: 'wisdom', sistem: 'fortune' };
   const statKey = catToStat[quest.category];
   if (statKey && state.stats[statKey] > 10) state.stats[statKey] = Math.max(10, state.stats[statKey] - 1);
   // Sayaçları geri al
@@ -1763,10 +1786,10 @@ function renderQuestsTab() {
 // ── CHARACTER TAB ──
 function renderCharacterTab() {
   const stats = [
-    { key: 'vitality', icon: '❤️', name: 'Canlılık', color: '#e74c3c', desc: `Can: ${100 + state.stats.vitality * 5}` },
-    { key: 'wisdom', icon: '📖', name: 'Bilgelik', color: '#3498db', desc: `Mana: ${50 + state.stats.wisdom * 3}` },
-    { key: 'fortune', icon: '💰', name: 'Şans', color: '#f39c12', desc: '+Altın Çarpanı' },
-    { key: 'charisma', icon: '💞', name: 'Karizma', color: '#9b59b6', desc: '+İtibar' }
+    { key: 'vitality', icon: '❤️', name: 'Canlılık', color: '#e74c3c', desc: `Beden & Sağlık · Can: ${100 + state.stats.vitality * 5}` },
+    { key: 'wisdom',   icon: '📖', name: 'Bilgelik',  color: '#3498db', desc: `Zihin & Anlam · Mana: ${50 + state.stats.wisdom * 3}` },
+    { key: 'fortune',  icon: '💰', name: 'Şans',      color: '#f39c12', desc: 'Kariyer & Sistem · Altın Çarpanı' },
+    { key: 'charisma', icon: '💞', name: 'Karizma',   color: '#9b59b6', desc: 'İlişkiler · +İtibar' }
   ];
   
   const lvlInfo = getLevelFromXP(state.xp);
@@ -2145,8 +2168,8 @@ function beginJourney() {
   state = defaultState(name, pendingClass || 'adventurer', title);
   // Başlangıç görevleri
   state.quests = [
-    { id: state.nextQuestId++, title: 'Bugünkü en önemli görevini tamamla', description: 'Zihninde en büyük ejderhayı yüzüne bak.', category: 'intelligence', difficulty: 'medium', createdAt: new Date().toLocaleDateString() },
-    { id: state.nextQuestId++, title: '30 dakika egzersiz yap', description: 'Beden ruhun evidir. Onu güçlendir.', category: 'health', difficulty: 'easy', createdAt: new Date().toLocaleDateString() }
+    { id: state.nextQuestId++, title: 'Bugünkü en önemli görevini tamamla', description: 'Zihninde en büyük ejderhayı yüzüne bak.', category: 'zihin', difficulty: 'medium', createdAt: new Date().toLocaleDateString() },
+    { id: state.nextQuestId++, title: '30 dakika egzersiz yap', description: 'Beden ruhun evidir. Onu güçlendir.', category: 'beden', difficulty: 'easy', createdAt: new Date().toLocaleDateString() }
   ];
   saveState(state);
   showSetup = false;
