@@ -1286,6 +1286,8 @@ let pendingReward = null;
 let showLevelUp = false;
 let newLevel = 1;
 let currentToast = null;
+let lastCompletedQuest = null; // Geri alma için
+let undoTimer = null;
 
 // ─────────────────────────────────────────────
 // PARTICLES
@@ -1377,6 +1379,10 @@ function rollReward(difficulty) {
 function completeQuest(questId) {
   const idx = state.quests.findIndex(q => q.id === questId);
   if (idx === -1) return;
+
+  // Geri alma için snapshot al
+  const snapshot = JSON.parse(JSON.stringify(state));
+  
   const quest = state.quests.splice(idx, 1)[0];
   
   // XP calculation
@@ -1424,6 +1430,15 @@ function completeQuest(questId) {
   // Check achievements
   checkAchievements();
   saveState(state);
+
+  // Geri alma timer'ı
+  lastCompletedQuest = { snapshot, questTitle: quest.title };
+  if (undoTimer) clearTimeout(undoTimer);
+  showUndoToast();
+  undoTimer = setTimeout(() => {
+    lastCompletedQuest = null;
+    hideUndoToast();
+  }, 30000);
 
   // Supabase'e kayıt
   const rewardRoll = rollReward(quest.difficulty);
@@ -1475,6 +1490,7 @@ function addQuest(data) {
     subCategory: data.subCategory || null,
     difficulty: data.difficulty,
     dueDate: data.dueDate || null,
+    color: data.color || null,
     createdAt: new Date().toLocaleDateString()
   };
   state.quests.push(quest);
@@ -1532,6 +1548,75 @@ function toast(msg) {
   document.body.appendChild(el);
   currentToast = el;
   setTimeout(() => { el.remove(); currentToast = null; }, 3000);
+}
+
+function showUndoToast() {
+  hideUndoToast();
+  const el = document.createElement('div');
+  el.id = 'undo-toast';
+  el.style.cssText = `
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+    background:var(--brown-dark); color:var(--parchment);
+    border:1px solid var(--gold); border-radius:6px;
+    padding:12px 20px; font-family:'Cinzel',serif; font-size:0.85rem;
+    z-index:300; display:flex; align-items:center; gap:12px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease;
+  `;
+  el.innerHTML = `
+    <span>✓ Görev tamamlandı</span>
+    <button onclick="undoComplete()" style="
+      background:rgba(212,175,55,0.2); border:1px solid var(--gold);
+      color:var(--gold); font-family:'Cinzel',serif; font-size:0.75rem;
+      padding:4px 12px; border-radius:4px; cursor:pointer; letter-spacing:0.5px;
+    ">↩ Hemen Geri Al</button>
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => hideUndoToast(), 5000);
+}
+
+function hideUndoToast() {
+  const el = document.getElementById('undo-toast');
+  if (el) el.remove();
+}
+
+function undoComplete() {
+  if (!lastCompletedQuest) return;
+  state = lastCompletedQuest.snapshot;
+  saveState(state);
+  lastCompletedQuest = null;
+  if (undoTimer) clearTimeout(undoTimer);
+  hideUndoToast();
+  showRewardModal = false;
+  pendingReward = null;
+  showLevelUp = false;
+  toast('Görev geri alındı ↩');
+  render();
+}
+
+function undoFromLog(logIdx) {
+  const quest = state.completedQuests[logIdx];
+  if (!quest) return;
+  // XP geri al
+  const xpToRemove = quest.xpGained || DIFFICULTIES[quest.difficulty]?.xp || 0;
+  state.xp = Math.max(0, state.xp - xpToRemove);
+  // Stat geri al
+  const catToStat = { health: 'vitality', intelligence: 'wisdom', money: 'fortune', relationships: 'charisma' };
+  const statKey = catToStat[quest.category];
+  if (statKey && state.stats[statKey] > 10) state.stats[statKey] = Math.max(10, state.stats[statKey] - 1);
+  // Sayaçları geri al
+  state.totalCompleted = Math.max(0, state.totalCompleted - 1);
+  if (quest.difficulty === 'legendary') state.completedLegendary = Math.max(0, state.completedLegendary - 1);
+  if (state.catCounts[quest.category]) state.catCounts[quest.category] = Math.max(0, state.catCounts[quest.category] - 1);
+  // Görevi aktif listeye geri ekle
+  delete quest.completedAt;
+  delete quest.xpGained;
+  state.quests.unshift(quest);
+  // Log'dan çıkar
+  state.completedQuests.splice(logIdx, 1);
+  saveState(state);
+  toast('Görev aktif listeye geri alındı ↩');
+  render();
 }
 
 // ─────────────────────────────────────────────
@@ -1628,9 +1713,9 @@ function renderQuestsTab() {
     const isOverdue = q.dueDate && new Date(q.dueDate) < new Date();
     const daysLeft = q.dueDate ? Math.ceil((new Date(q.dueDate) - new Date()) / 86400000) : null;
     return `
-      <div class="quest-card cat-${q.category}">
+      <div class="quest-card cat-${q.category}" style="${q.color ? `border-left:4px solid ${q.color};` : ''}">
         ${isOverdue ? '<div class="urgent-seal">⚠ ACİL</div>' : ''}
-        <div class="quest-title">${escHtml(q.title)}</div>
+        <div class="quest-title" style="${q.color ? `color:${q.color};` : ''}">${escHtml(q.title)}</div>
         ${q.description ? `<div class="quest-desc">${escHtml(q.description)}</div>` : ''}
         <div class="quest-meta">
           <span class="diff-badge ${diff.class}">${diff.stars} ${diff.label}</span>
@@ -1647,13 +1732,14 @@ function renderQuestsTab() {
     `;
   }).join('') : `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">Aktif görev yok. Macera seni bekliyor...</div></div>`;
 
-  const logEntries = completed.length > 0 ? completed.map(q => {
+  const logEntries = completed.length > 0 ? completed.map((q, idx) => {
     const sub = q.subCategory ? (SUB_CATEGORIES[q.category] || []).find(s => s.id === q.subCategory) : null;
     return `
     <div class="log-entry">
-      <div class="log-title">${escHtml(q.title)}</div>
+      <div class="log-title" style="${q.color ? `color:${q.color};` : ''}">${escHtml(q.title)}</div>
       <div class="log-meta">${q.completedAt} · ${CATEGORIES[q.category]?.icon} ${q.category}${sub ? ' · ' + sub.label : ''}</div>
       <div class="log-xp">+${q.xpGained || DIFFICULTIES[q.difficulty]?.xp || 0} XP</div>
+      <button onclick="undoFromLog(${idx})" style="margin-top:6px;background:rgba(139,37,0,0.08);border:1px solid rgba(139,37,0,0.2);color:var(--red-ink);font-family:'Cinzel',serif;font-size:0.65rem;padding:3px 10px;border-radius:4px;cursor:pointer;letter-spacing:0.5px">↩ Geri Al</button>
     </div>
   `}).join('') : `<div class="empty-state"><div class="empty-icon">🪶</div><div class="empty-text">Efsaneniz henüz yazılmadı...</div></div>`;
 
@@ -1875,6 +1961,15 @@ function renderQuestModal() {
             </select>
           </div>
         <div class="form-group">
+          <label class="form-label">Görev Rengi</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            ${['#c0392b','#e67e22','#f1c40f','#27ae60','#2980b9','#8e44ad','#16a085','#d35400','#2c3e50','#7f8c8d'].map(c => 
+              `<div onclick="selectQuestColor('${c}')" id="qcolor-${c.replace('#','')}" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid transparent;transition:all 0.2s" title="${c}"></div>`
+            ).join('')}
+          </div>
+          <input type="hidden" id="q-color" value="" />
+        </div>
+        <div class="form-group">
           <label class="form-label">Son Tarih (İsteğe Bağlı)</label>
           <input class="form-input" id="q-due" type="date" />
         </div>
@@ -1883,6 +1978,19 @@ function renderQuestModal() {
       </div>
     </div>
   `;
+}
+
+function selectQuestColor(color) {
+  // Tüm renk dairelerinden seçimi kaldır
+  document.querySelectorAll('[id^="qcolor-"]').forEach(el => {
+    el.style.border = '3px solid transparent';
+    el.style.transform = 'scale(1)';
+  });
+  // Seçili olanı işaretle
+  const el = document.getElementById('qcolor-' + color.replace('#',''));
+  if (el) { el.style.border = '3px solid var(--gold)'; el.style.transform = 'scale(1.2)'; }
+  const input = document.getElementById('q-color');
+  if (input) input.value = color;
 }
 
 function updateSubCats() {
@@ -1902,9 +2010,10 @@ function submitQuest() {
   const subcat = document.getElementById('q-subcat')?.value || null;
   const diff = document.getElementById('q-diff')?.value;
   const due = document.getElementById('q-due')?.value;
+  const color = document.getElementById('q-color')?.value || null;
   if (!title || !cat || !diff) { toast('Tüm zorunlu alanları doldur!'); return; }
   showQuestModal = false;
-  addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due });
+  addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, color });
 }
 
 function openQuestModal() { showQuestModal = true; render(); }
