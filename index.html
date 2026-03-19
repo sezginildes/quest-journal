@@ -1825,9 +1825,10 @@ function renderQuestsTab() {
     { id: 'q4', label: '⚫ Ne Acil Ne Önemli',    cls: 'q4', hint: 'Ertele/Sil' },
   ];
 
-  // Matrise göre grupla, matrix seçilmemişse q2'ye koy
+  // Matrise göre grupla — order alanına göre sırala
   const grouped = { q1: [], q2: [], q3: [], q4: [] };
-  active.forEach(q => { const m = q.matrix || 'q2'; grouped[m] = grouped[m] || []; grouped[m].push(q); });
+  active.forEach(q => { const m = q.matrix || 'q2'; grouped[m].push(q); });
+  Object.keys(grouped).forEach(m => grouped[m].sort((a, b) => (a.order || 0) - (b.order || 0)));
 
   const matrixHtml = `
     <div class="matrix-grid">
@@ -1837,7 +1838,7 @@ function renderQuestsTab() {
              ondragleave="this.classList.remove('drag-over')"
              ondrop="dropToMatrix(event,'${md.id}',this)">
           <div class="matrix-quadrant-title">${md.label} <span style="opacity:0.6;font-weight:400;font-size:0.65rem">${md.hint}</span></div>
-          ${(grouped[md.id] || []).map(q => {
+          ${(grouped[md.id] || []).map((q, qIdx) => {
             const diff = DIFFICULTIES[q.difficulty];
             const cat = CATEGORIES[q.category];
             const daysLeft = q.dueDate ? Math.ceil((new Date(q.dueDate) - new Date()) / 86400000) : null;
@@ -1845,6 +1846,8 @@ function renderQuestsTab() {
               <div class="matrix-card" 
                    draggable="true"
                    ondragstart="dragStart(event,${q.id})"
+                   ondragover="event.preventDefault();event.stopPropagation()"
+                   ondrop="dropOnCard(event,${q.id},'${md.id}')"
                    style="${q.color ? `border-left-color:${q.color};background:${q.color}18;` : ''}"
                    id="qcard-${q.id}">
                 <div style="font-family:'Cinzel',serif;font-size:0.8rem;font-weight:600;color:${q.color || 'var(--brown-dark)'};margin-bottom:4px">${escHtml(q.title)}</div>
@@ -2132,7 +2135,42 @@ function dropToMatrix(event, matrixId, el) {
   el.classList.remove('drag-over');
   if (!draggedQuestId) return;
   const q = state.quests.find(q => q.id === draggedQuestId);
-  if (q) { q.matrix = matrixId; saveState(state); render(); }
+  if (q) {
+    q.matrix = matrixId;
+    // En sona ekle
+    const inMatrix = state.quests.filter(x => (x.matrix || 'q2') === matrixId);
+    q.order = inMatrix.length * 10;
+    saveState(state);
+    render();
+  }
+  draggedQuestId = null;
+}
+
+function dropOnCard(event, targetQuestId, matrixId) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (!draggedQuestId || draggedQuestId === targetQuestId) return;
+
+  const inMatrix = state.quests
+    .filter(q => (q.matrix || 'q2') === matrixId)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const fromIdx = inMatrix.findIndex(q => q.id === draggedQuestId);
+  const toIdx = inMatrix.findIndex(q => q.id === targetQuestId);
+
+  if (fromIdx === -1 || toIdx === -1) {
+    // Farklı kutudan geliyor — sadece matris değiştir
+    const q = state.quests.find(q => q.id === draggedQuestId);
+    if (q) { q.matrix = matrixId; q.order = toIdx * 10; }
+  } else {
+    // Aynı kutu içinde sıra değiştir
+    const moved = inMatrix.splice(fromIdx, 1)[0];
+    inMatrix.splice(toIdx, 0, moved);
+    inMatrix.forEach((q, i) => { q.order = i * 10; });
+  }
+
+  saveState(state);
+  render();
   draggedQuestId = null;
 }
 
