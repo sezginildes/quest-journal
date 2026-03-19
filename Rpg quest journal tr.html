@@ -441,16 +441,17 @@ body {
 .q4 .matrix-quadrant-title { color: #7f8c8d; }
 
 .matrix-card {
-  background: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.6);
   border-radius: 4px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   margin-bottom: 6px;
   cursor: grab;
   transition: all 0.2s;
   border-left: 3px solid transparent;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.08);
 }
-.matrix-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.matrix-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
 .matrix-card.dragging { opacity: 0.5; cursor: grabbing; }
 .matrix-quadrant.drag-over { box-shadow: inset 0 0 0 2px var(--gold); }
 
@@ -2141,18 +2142,18 @@ function renderQuestsTab() {
                    ondrop="dropOnCard(event,${q.id},'${md.id}')"
                    style="${q.color ? `border-left-color:${q.color};background:${q.color}18;` : ''}"
                    id="qcard-${q.id}">
-                <div style="font-family:'Cinzel',serif;font-size:0.8rem;font-weight:600;color:${q.color || 'var(--brown-dark)'};margin-bottom:4px">${escHtml(q.title)}</div>
-                ${q.description ? `<div style="font-size:0.75rem;color:var(--brown-light);font-style:italic;margin-bottom:4px">${escHtml(q.description)}</div>` : ''}
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
-                  <span class="diff-badge ${diff.class}" style="font-size:0.65rem">${diff.stars} ${diff.label}</span>
-                  <span class="xp-badge" style="font-size:0.7rem">+${diff.xp} XP</span>
-                  <span class="cat-badge cat-${q.category}" style="font-size:0.65rem">${cat.icon} ${cat.label}</span>
-                  ${daysLeft !== null ? `<span style="font-size:0.7rem;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-light)'}">📅 ${daysLeft <= 0 ? '🔴 Gecikti' : daysLeft + ' gün'}</span>` : ''}
+                <div style="font-family:'Cinzel',serif;font-size:0.85rem;font-weight:700;color:${q.color || 'var(--brown-dark)'};margin-bottom:6px;line-height:1.3">${escHtml(q.title)}</div>
+                ${q.description ? `<div style="font-size:0.8rem;color:var(--brown-mid);font-style:italic;margin-bottom:6px;line-height:1.4">${escHtml(q.description)}</div>` : ''}
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+                  <span class="diff-badge ${diff.class}" style="font-size:0.72rem;padding:3px 9px">${diff.stars} ${diff.label}</span>
+                  <span class="xp-badge" style="font-size:0.78rem;font-weight:700">+${diff.xp} XP</span>
+                  <span class="cat-badge cat-${q.category}" style="font-size:0.72rem;padding:3px 9px">${cat.icon} ${cat.label}</span>
+                  ${daysLeft !== null ? `<span style="font-size:0.75rem;font-weight:600;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-mid)'}">📅 ${daysLeft <= 0 ? '🔴 Gecikti' : daysLeft + ' gün'}</span>` : ''}
                 </div>
                 <div style="display:flex;gap:4px">
-                  <button class="btn-complete" style="font-size:0.7rem;padding:4px 8px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
-                  <button style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="startFocus(${q.id})">🎯 Odaklan</button>
-                  <button class="btn-abandon" style="font-size:0.7rem;padding:4px 8px" onclick="abandonQuest(${q.id})">✗</button>
+                  <button class="btn-complete" style="font-size:0.75rem;padding:6px 10px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
+                  <button style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:var(--brown-dark);font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="startFocus(${q.id})">🎯 Odaklan</button>
+                  <button class="btn-abandon" style="font-size:0.75rem;padding:6px 8px" onclick="abandonQuest(${q.id})">✗</button>
                 </div>
               </div>`;
           }).join('')}
