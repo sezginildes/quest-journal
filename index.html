@@ -1201,18 +1201,35 @@ async function loadAndStartApp() {
     state = cloudData;
     showSetup = false;
   } else {
-    // Bulutta yoksa localStorage'a bak
     const local = loadState();
     if (local) {
       state = local;
       showSetup = false;
-      // Localden bulutu güncelle
       await saveCharacterToCloud(currentUser.id, state);
     } else {
       state = null;
       showSetup = true;
     }
   }
+
+  // Eski kategori isimlerini yeniye migrate et
+  if (state) {
+    const catMap = {
+      health: 'beden', intelligence: 'zihin',
+      money: 'kariyer', relationships: 'iliski'
+    };
+    const migrateCat = (cat) => catMap[cat] || cat;
+    if (state.quests) state.quests.forEach(q => { q.category = migrateCat(q.category); });
+    if (state.completedQuests) state.completedQuests.forEach(q => { q.category = migrateCat(q.category); });
+    // catCounts migrate
+    if (state.catCounts) {
+      const newCounts = { beden: 0, zihin: 0, kariyer: 0, iliski: 0, anlam: 0, sistem: 0 };
+      Object.entries(state.catCounts).forEach(([k, v]) => { newCounts[migrateCat(k)] = (newCounts[migrateCat(k)] || 0) + v; });
+      state.catCounts = newCounts;
+    }
+    saveState(state);
+  }
+
   initParticles();
   render();
 }
