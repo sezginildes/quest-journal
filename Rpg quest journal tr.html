@@ -479,6 +479,116 @@ body {
 .matrix-btn.q4-btn { border-color: #7f8c8d; color: #7f8c8d; }
 .matrix-btn.q4-btn.selected { background: rgba(127,140,141,0.15); }
 
+/* FOCUS MODE */
+.focus-overlay {
+  position: fixed; inset: 0;
+  background: #0d0803;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  animation: fadeIn 0.4s ease;
+}
+.focus-category {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+.focus-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 700;
+  color: var(--parchment-light);
+  text-align: center;
+  max-width: 700px;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  text-shadow: 0 0 30px rgba(244,228,188,0.2);
+}
+.focus-desc {
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: var(--parchment);
+  opacity: 0.5;
+  text-align: center;
+  max-width: 500px;
+  margin-bottom: 48px;
+  font-style: italic;
+}
+.focus-timer-wrap {
+  position: relative;
+  width: 200px; height: 200px;
+  margin-bottom: 40px;
+}
+.focus-timer-svg { transform: rotate(-90deg); }
+.focus-timer-bg { fill: none; stroke: rgba(212,175,55,0.1); stroke-width: 8; }
+.focus-timer-ring {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+  filter: drop-shadow(0 0 6px rgba(212,175,55,0.6));
+}
+.focus-timer-text {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.focus-time {
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(212,175,55,0.5);
+}
+.focus-time-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--parchment);
+  opacity: 0.5;
+  margin-top: 4px;
+}
+.focus-actions {
+  display: flex; gap: 12px;
+  flex-wrap: wrap; justify-content: center;
+}
+.btn-focus-pause {
+  background: rgba(212,175,55,0.15); border: 2px solid var(--gold);
+  color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.9rem;
+  letter-spacing: 1px; padding: 12px 28px; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; font-weight: 600;
+}
+.btn-focus-pause:hover { background: rgba(212,175,55,0.25); }
+.btn-focus-complete {
+  background: linear-gradient(135deg, var(--green-health), #3d8b3d);
+  border: none; color: white; font-family: 'Cinzel', serif; font-size: 0.9rem;
+  letter-spacing: 1px; padding: 12px 28px; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; font-weight: 600;
+  box-shadow: 0 4px 15px rgba(45,107,45,0.4);
+}
+.btn-focus-complete:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.btn-focus-exit {
+  background: transparent; border: 1px solid rgba(139,37,0,0.4);
+  color: var(--red-ink); font-family: 'Cinzel', serif; font-size: 0.8rem;
+  letter-spacing: 1px; padding: 10px 20px; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; opacity: 0.7;
+}
+.btn-focus-exit:hover { opacity: 1; background: rgba(139,37,0,0.1); }
+.focus-xp-badge {
+  font-family: 'Cinzel', serif; font-size: 0.85rem;
+  color: var(--gold); opacity: 0.7; margin-top: 20px; letter-spacing: 1px;
+}
+
 .urgent-seal {
   position: absolute;
   top: -8px; right: 12px;
@@ -1794,8 +1904,126 @@ function undoFromLog(logIdx) {
 }
 
 // ─────────────────────────────────────────────
-// RENDER
+// FOCUS MODE
 // ─────────────────────────────────────────────
+
+let focusTimer = null;
+let focusSeconds = 25 * 60;
+let focusTotalSeconds = 25 * 60;
+let focusPaused = false;
+let focusQuestId = null;
+
+function startFocus(questId) {
+  const quest = state.quests.find(q => q.id === questId);
+  if (!quest) return;
+  focusQuestId = questId;
+  focusSeconds = 25 * 60;
+  focusTotalSeconds = 25 * 60;
+  focusPaused = false;
+  renderFocusMode(quest);
+  focusTimer = setInterval(() => {
+    if (focusPaused) return;
+    focusSeconds--;
+    updateFocusTimer();
+    if (focusSeconds <= 0) {
+      clearInterval(focusTimer);
+      focusComplete();
+    }
+  }, 1000);
+}
+
+function renderFocusMode(quest) {
+  const cat = CATEGORIES[quest.category];
+  const diff = DIFFICULTIES[quest.difficulty];
+  const el = document.createElement('div');
+  el.className = 'focus-overlay';
+  el.id = 'focus-overlay';
+  el.innerHTML = `
+    <div class="focus-category" style="color:${cat.color}">${cat.icon} ${cat.label}</div>
+    <div class="focus-title" style="${quest.color ? `color:${quest.color}` : ''}">${escHtml(quest.title)}</div>
+    ${quest.description ? `<div class="focus-desc">${escHtml(quest.description)}</div>` : '<div style="margin-bottom:48px"></div>'}
+    <div class="focus-timer-wrap">
+      <svg class="focus-timer-svg" width="200" height="200" viewBox="0 0 200 200">
+        <circle class="focus-timer-bg" cx="100" cy="100" r="90"/>
+        <circle class="focus-timer-ring" id="focus-ring" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="focus-timer-text">
+        <div class="focus-time" id="focus-time-display">25:00</div>
+        <div class="focus-time-label">ODAK SEANSİ</div>
+      </div>
+    </div>
+    <div class="focus-actions">
+      <button class="btn-focus-pause" id="focus-pause-btn" onclick="toggleFocusPause()">⏸ Duraklat</button>
+      <button class="btn-focus-complete" onclick="focusCompleteManual()">✓ Görevi Tamamla</button>
+      <button class="btn-focus-exit" onclick="exitFocus()">✕ Çıkış</button>
+    </div>
+    <div class="focus-xp-badge">+${diff.xp} XP · ${diff.stars} ${diff.label}</div>
+  `;
+  document.body.appendChild(el);
+
+  // ESC ile çık
+  document.addEventListener('keydown', focusKeyHandler);
+}
+
+function focusKeyHandler(e) {
+  if (e.key === 'Escape') exitFocus();
+}
+
+function updateFocusTimer() {
+  const mins = Math.floor(focusSeconds / 60);
+  const secs = focusSeconds % 60;
+  const display = document.getElementById('focus-time-display');
+  if (display) display.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  
+  const ring = document.getElementById('focus-ring');
+  if (ring) {
+    const pct = focusSeconds / focusTotalSeconds;
+    ring.style.strokeDashoffset = 565 * (1 - pct);
+    // Renk değişimi — kırmızıya döner son 5 dakikada
+    if (focusSeconds < 300) ring.style.stroke = '#e74c3c';
+    else if (focusSeconds < 600) ring.style.stroke = '#f39c12';
+    else ring.style.stroke = 'var(--gold)';
+  }
+}
+
+function toggleFocusPause() {
+  focusPaused = !focusPaused;
+  const btn = document.getElementById('focus-pause-btn');
+  if (btn) btn.textContent = focusPaused ? '▶ Devam Et' : '⏸ Duraklat';
+}
+
+function focusComplete() {
+  // Timer bitti — otomatik tamamla
+  const overlay = document.getElementById('focus-overlay');
+  if (overlay) {
+    overlay.innerHTML = `
+      <div style="text-align:center;animation:levelUpAnim 0.5s cubic-bezier(0.34,1.56,0.64,1)">
+        <div style="font-size:5rem;margin-bottom:16px">🏆</div>
+        <div style="font-family:'Cinzel',serif;font-size:2.5rem;color:var(--gold);font-weight:900;text-shadow:0 0 30px rgba(212,175,55,0.6)">SEANS TAMAMLANDI!</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--parchment);opacity:0.7;margin:16px 0;font-style:italic">25 dakika tam odakla çalıştın. Efsane!</div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
+          <button class="btn-focus-complete" onclick="focusCompleteManual()" style="font-size:1rem;padding:14px 32px">✓ Görevi Tamamla</button>
+          <button class="btn-focus-exit" onclick="exitFocus()" style="font-size:1rem;padding:14px 24px">Sonra Tamamla</button>
+        </div>
+      </div>
+    `;
+  }
+  // Titreşim (mobil)
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+function focusCompleteManual() {
+  exitFocus();
+  if (focusQuestId) completeQuest(focusQuestId);
+}
+
+function exitFocus() {
+  if (focusTimer) clearInterval(focusTimer);
+  document.removeEventListener('keydown', focusKeyHandler);
+  const el = document.getElementById('focus-overlay');
+  if (el) el.remove();
+  focusQuestId = null;
+}
 
 function render() {
   const app = document.getElementById('app');
@@ -1923,6 +2151,7 @@ function renderQuestsTab() {
                 </div>
                 <div style="display:flex;gap:4px">
                   <button class="btn-complete" style="font-size:0.7rem;padding:4px 8px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
+                  <button style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="startFocus(${q.id})">🎯 Odaklan</button>
                   <button class="btn-abandon" style="font-size:0.7rem;padding:4px 8px" onclick="abandonQuest(${q.id})">✗</button>
                 </div>
               </div>`;
@@ -2171,6 +2400,15 @@ function renderQuestModal() {
         <div class="form-group">
           <label class="form-label">Son Tarih (İsteğe Bağlı)</label>
           <input class="form-input" id="q-due" type="date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔄 Tekrar</label>
+          <select class="form-select" id="q-recur">
+            <option value="">Tekrar yok</option>
+            <option value="daily">Her gün</option>
+            <option value="weekly">Her hafta</option>
+            <option value="monthly">Her ay</option>
+          </select>
         </div>
         
         <button class="btn-sign" onclick="submitQuest()">✒ İmzala & Görevi Kabul Et ✒</button>
