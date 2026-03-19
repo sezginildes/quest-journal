@@ -1078,8 +1078,6 @@ async function saveCharacterToCloud(userId, characterData) {
 // Supabase log fonksiyonu
 async function logToSupabase(data) {
   try {
-    const payload = { ...data };
-    if (currentUser) payload.auth_user_id = currentUser.id;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/quest_logs`, {
       method: 'POST',
       headers: {
@@ -1088,7 +1086,7 @@ async function logToSupabase(data) {
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(data)
     });
     if (!res.ok) console.warn('Supabase log hatası:', await res.text());
   } catch(e) {
