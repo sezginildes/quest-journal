@@ -255,13 +255,13 @@ body {
 }
 .tab-btn {
   font-family: 'Cinzel', serif;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
   color: var(--parchment);
   background: rgba(0,0,0,0.2);
   border: 1px solid rgba(212,175,55,0.2);
   border-bottom: none;
-  padding: 8px 16px;
+  padding: 7px 12px;
   cursor: pointer;
   border-radius: 6px 6px 0 0;
   transition: all 0.2s;
@@ -2069,7 +2069,7 @@ function render() {
 
     <!-- TABS -->
     <div class="nav-tabs">
-      ${['quests','character','achievements','rewards','stats','settings'].map(t => `
+      ${['quests','character','achievements','rewards','stats'].map(t => `
         <button class="tab-btn ${activeTab === t ? 'active' : ''}" onclick="switchTab('${t}')">${tabLabel(t)}</button>
       `).join('')}
     </div>
@@ -2147,7 +2147,7 @@ function renderQuestsTab() {
                   <span class="diff-badge ${diff.class}" style="font-size:0.65rem">${diff.stars} ${diff.label}</span>
                   <span class="xp-badge" style="font-size:0.7rem">+${diff.xp} XP</span>
                   <span class="cat-badge cat-${q.category}" style="font-size:0.65rem">${cat.icon} ${cat.label}</span>
-                  ${daysLeft !== null ? `<span style="font-size:0.7rem;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-light)'}">📅 ${daysLeft <= 0 ? 'Gecikti!' : daysLeft + ' gün'}</span>` : ''}
+                  ${daysLeft !== null ? `<span style="font-size:0.7rem;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-light)'}">📅 ${daysLeft <= 0 ? '🔴 Gecikti' : daysLeft + ' gün'}</span>` : ''}
                 </div>
                 <div style="display:flex;gap:4px">
                   <button class="btn-complete" style="font-size:0.7rem;padding:4px 8px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
@@ -2169,7 +2169,7 @@ function renderQuestsTab() {
       <div class="log-title" style="${q.color ? `color:${q.color};` : ''}">${escHtml(q.title)}</div>
       <div class="log-meta">${q.completedAt} · ${CATEGORIES[q.category]?.icon} ${q.category}${sub ? ' · ' + sub.label : ''}</div>
       <div class="log-xp">+${q.xpGained || DIFFICULTIES[q.difficulty]?.xp || 0} XP</div>
-      <button onclick="undoFromLog(${idx})" style="margin-top:6px;background:rgba(139,37,0,0.08);border:1px solid rgba(139,37,0,0.2);color:var(--red-ink);font-family:'Cinzel',serif;font-size:0.65rem;padding:3px 10px;border-radius:4px;cursor:pointer;letter-spacing:0.5px">↩ Geri Al</button>
+      <button onclick="undoFromLog(${idx})" style="margin-top:4px;background:transparent;border:none;color:var(--brown-light);font-family:'Caveat',cursive;font-size:0.75rem;padding:0;cursor:pointer;opacity:0.5;text-decoration:underline">↩ geri al</button>
     </div>
   `}).join('') : `<div class="empty-state"><div class="empty-icon">🪶</div><div class="empty-text">Efsaneniz henüz yazılmadı...</div></div>`;
 
