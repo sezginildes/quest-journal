@@ -1155,6 +1155,36 @@ async function saveCharacterToCloud(userId, characterData) {
     .upsert({ user_id: userId, data: characterData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
 }
 
+// Realtime sync — başka cihazdan değişiklik gelince otomatik güncelle
+let realtimeChannel = null;
+function startRealtimeSync(userId) {
+  if (realtimeChannel) sbClient.removeChannel(realtimeChannel);
+  
+  realtimeChannel = sbClient
+    .channel('character-sync')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'characters',
+      filter: `user_id=eq.${userId}`
+    }, (payload) => {
+      // Başka cihazdan güncelleme geldi
+      const newData = payload.new?.data;
+      if (!newData) return;
+      
+      // Eğer şu anki state'den daha yeni ise güncelle
+      const newUpdated = new Date(payload.new?.updated_at || 0);
+      const localUpdated = new Date(state?._lastSaved || 0);
+      
+      if (newUpdated > localUpdated) {
+        state = newData;
+        render();
+        toast('🔄 Başka cihazdan senkronize edildi');
+      }
+    })
+    .subscribe();
+}
+
 // Supabase log fonksiyonu
 async function logToSupabase(data) {
   try {
@@ -1246,6 +1276,9 @@ async function loadAndStartApp() {
 
   initParticles();
   render();
+  
+  // Realtime sync başlat
+  startRealtimeSync(currentUser.id);
 }
 
 // ─────────────────────────────────────────────
@@ -1363,7 +1396,10 @@ function loadState() {
   try { return JSON.parse(localStorage.getItem('rpg_quest_journal')) || null; } catch { return null; }
 }
 function saveState(state) {
-  try { localStorage.setItem('rpg_quest_journal', JSON.stringify(state)); } catch {}
+  try { 
+    state._lastSaved = new Date().toISOString();
+    localStorage.setItem('rpg_quest_journal', JSON.stringify(state)); 
+  } catch {}
   if (currentUser) saveCharacterToCloud(currentUser.id, state);
 }
 
