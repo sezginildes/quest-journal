@@ -1148,41 +1148,41 @@ async function loadCharacterFromCloud(userId) {
   return data.data;
 }
 
-// Karakter verisini Supabase'e kaydet
-async function saveCharacterToCloud(userId, characterData) {
-  await sbClient
-    .from('characters')
-    .upsert({ user_id: userId, data: characterData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-}
-
 // Realtime sync — başka cihazdan değişiklik gelince otomatik güncelle
 let realtimeChannel = null;
 function startRealtimeSync(userId) {
   if (realtimeChannel) sbClient.removeChannel(realtimeChannel);
   
   realtimeChannel = sbClient
-    .channel('character-sync')
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'characters',
-      filter: `user_id=eq.${userId}`
-    }, (payload) => {
-      // Başka cihazdan güncelleme geldi
-      const newData = payload.new?.data;
+    .channel(`character:${userId}`)
+    .on('broadcast', { event: 'sync' }, (payload) => {
+      const newData = payload.payload?.state;
       if (!newData) return;
-      
-      // Eğer şu anki state'den daha yeni ise güncelle
-      const newUpdated = new Date(payload.new?.updated_at || 0);
-      const localUpdated = new Date(state?._lastSaved || 0);
-      
-      if (newUpdated > localUpdated) {
+      const newTime = new Date(newData._lastSaved || 0);
+      const localTime = new Date(state?._lastSaved || 0);
+      if (newTime > localTime) {
         state = newData;
         render();
-        toast('🔄 Başka cihazdan senkronize edildi');
+        toast('🔄 Senkronize edildi');
       }
     })
     .subscribe();
+}
+
+// Kaydet ve diğer cihazlara broadcast et
+async function saveCharacterToCloud(userId, characterData) {
+  await sbClient
+    .from('characters')
+    .upsert({ user_id: userId, data: characterData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+
+  // Diğer açık sekmelere/cihazlara anlık bildir
+  if (realtimeChannel) {
+    realtimeChannel.send({
+      type: 'broadcast',
+      event: 'sync',
+      payload: { state: characterData }
+    });
+  }
 }
 
 // Supabase log fonksiyonu
@@ -1279,6 +1279,20 @@ async function loadAndStartApp() {
   
   // Realtime sync başlat
   startRealtimeSync(currentUser.id);
+
+  // 30 saniyede bir buluttan güncelle (cross-device sync)
+  setInterval(async () => {
+    if (!currentUser) return;
+    const cloudData = await loadCharacterFromCloud(currentUser.id);
+    if (!cloudData) return;
+    const cloudTime = new Date(cloudData._lastSaved || 0);
+    const localTime = new Date(state?._lastSaved || 0);
+    if (cloudTime > localTime) {
+      state = cloudData;
+      render();
+      toast('🔄 Senkronize edildi');
+    }
+  }, 30000);
 }
 
 // ─────────────────────────────────────────────
@@ -1590,15 +1604,6 @@ function completeQuest(questId) {
   // Check achievements
   checkAchievements();
   saveState(state);
-
-  // Geri alma timer'ı
-  lastCompletedQuest = { snapshot, questTitle: quest.title };
-  if (undoTimer) clearTimeout(undoTimer);
-  showUndoToast();
-  undoTimer = setTimeout(() => {
-    lastCompletedQuest = null;
-    hideUndoToast();
-  }, 30000);
 
   // Supabase'e kayıt
   const rewardRoll = rollReward(quest.difficulty);
