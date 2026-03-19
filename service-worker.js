@@ -1,16 +1,17 @@
-const CACHE_NAME = 'gorev-gunlugu-v1';
-const urlsToCache = [
-  '/',
-  '/index.html'
-];
+const CACHE_NAME = 'gorev-gunlugu-v2';
+const urlsToCache = ['/', '/index.html'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
+  // chrome-extension ve non-http istekleri atla
+  if (!event.request.url.startsWith('http')) return;
+  
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) return response;
@@ -21,7 +22,7 @@ self.addEventListener('fetch', event => {
         const responseToCache = fetchResponse.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
         return fetchResponse;
-      });
+      }).catch(() => response);
     })
   );
 });
@@ -32,4 +33,5 @@ self.addEventListener('activate', event => {
       keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
     ))
   );
+  self.clients.claim();
 });
