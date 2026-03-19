@@ -1090,7 +1090,7 @@ body {
 // ─────────────────────────────────────────────
 
 const SUPABASE_URL = 'https://phvjvktkttchiqmtozuj.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_BBZuPl7Q7lfWjNKcnUsZqA_SjTJE5YF';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBodmp2a3RrdHRjaGlxbXRvenVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTQ4NTAsImV4cCI6MjA4OTQzMDg1MH0.8h9O9Yx455uaGkDY07uxDN_M_faNFqTwF7R-dxPV2YA';
 let sbClient = null;
 
 let currentUser = null;
@@ -1583,7 +1583,7 @@ function addQuest(data) {
     subCategory: data.subCategory || null,
     difficulty: data.difficulty,
     dueDate: data.dueDate || null,
-    color: data.color || null,
+    color: data.color || getCatColor(data.category),
     matrix: data.matrix || 'q2',
     createdAt: new Date().toLocaleDateString()
   };
@@ -1761,7 +1761,7 @@ function render() {
 
     <!-- TABS -->
     <div class="nav-tabs">
-      ${['quests','character','achievements','rewards','stats'].map(t => `
+      ${['quests','character','achievements','rewards','stats','settings'].map(t => `
         <button class="tab-btn ${activeTab === t ? 'active' : ''}" onclick="switchTab('${t}')">${tabLabel(t)}</button>
       `).join('')}
     </div>
@@ -1781,7 +1781,7 @@ function render() {
 }
 
 function tabLabel(t) {
-  return { quests: '⚔️ Görevler', character: '🧙 Karakter', achievements: '🏆 Başarımlar', rewards: '🎁 Ödüller', stats: '📊 Tarih' }[t];
+  return { quests: '⚔️ Görevler', character: '🧙 Karakter', achievements: '🏆 Başarımlar', rewards: '🎁 Ödüller', stats: '📊 Tarih', settings: '⚙️ Ayarlar' }[t];
 }
 
 function switchTab(t) { activeTab = t; render(); }
@@ -1792,6 +1792,7 @@ function renderTab() {
   if (activeTab === 'achievements') return renderAchievementsTab();
   if (activeTab === 'rewards') return renderRewardsTab();
   if (activeTab === 'stats') return renderStatsTab();
+  if (activeTab === 'settings') return renderSettingsTab();
   return '';
 }
 
@@ -2084,13 +2085,6 @@ function renderQuestModal() {
           </div>
           <input type="hidden" id="q-matrix" value="q2" />
         </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-            ${['#c0392b','#e67e22','#f1c40f','#27ae60','#2980b9','#8e44ad','#16a085','#d35400','#2c3e50','#7f8c8d'].map(c => 
-              `<div onclick="selectQuestColor('${c}')" id="qcolor-${c.replace('#','')}" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid transparent;transition:all 0.2s" title="${c}"></div>`
-            ).join('')}
-          </div>
-          <input type="hidden" id="q-color" value="" />
-        </div>
         <div class="form-group">
           <label class="form-label">Son Tarih (İsteğe Bağlı)</label>
           <input class="form-input" id="q-due" type="date" />
@@ -2125,17 +2119,20 @@ function dropToMatrix(event, matrixId, el) {
   draggedQuestId = null;
 }
 
-function selectQuestColor(color) {
-  // Tüm renk dairelerinden seçimi kaldır
-  document.querySelectorAll('[id^="qcolor-"]').forEach(el => {
-    el.style.border = '3px solid transparent';
-    el.style.transform = 'scale(1)';
-  });
-  // Seçili olanı işaretle
-  const el = document.getElementById('qcolor-' + color.replace('#',''));
-  if (el) { el.style.border = '3px solid var(--gold)'; el.style.transform = 'scale(1.2)'; }
-  const input = document.getElementById('q-color');
-  if (input) input.value = color;
+// Kategori rengini al — kullanıcı özelleştirmişse ondan, yoksa varsayılandan
+function getCatColor(catId) {
+  const custom = state.categoryColors?.[catId];
+  return custom || CATEGORIES[catId]?.color || '#4a3728';
+}
+
+// Kategori rengini güncelle
+function updateCatColor(catId, color) {
+  if (!state.categoryColors) state.categoryColors = {};
+  state.categoryColors[catId] = color;
+  // Mevcut görevlerin renklerini de güncelle
+  state.quests.forEach(q => { if (q.category === catId) q.color = color; });
+  saveState(state);
+  render();
 }
 
 function updateSubCats() {
@@ -2155,11 +2152,12 @@ function submitQuest() {
   const subcat = document.getElementById('q-subcat')?.value || null;
   const diff = document.getElementById('q-diff')?.value;
   const due = document.getElementById('q-due')?.value;
-  const color = document.getElementById('q-color')?.value || null;
   const matrix = document.getElementById('q-matrix')?.value || 'q2';
   if (!title || !cat || !diff) { toast('Tüm zorunlu alanları doldur!'); return; }
+  // Rengi kategoriden al, kullanıcı özel renk belirlemediyse
+  const catColor = getCatColor(cat);
   showQuestModal = false;
-  addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, color, matrix });
+  addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, color: catColor, matrix });
 }
 
 function openQuestModal() { showQuestModal = true; render(); }
@@ -2298,6 +2296,37 @@ function beginJourney() {
   showSetup = false;
   render();
   toast('Hoş geldin, ' + name + '! Efsanen şimdi başlıyor.');
+}
+
+// ── SETTINGS TAB ──
+function renderSettingsTab() {
+  return `
+    <div style="max-width:600px">
+      <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:var(--red-ink);border-bottom:2px solid var(--red-ink);padding-bottom:8px;margin-bottom:20px;letter-spacing:2px">⚙️ KATEGORİ RENKLERİ</h2>
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:20px;font-size:1rem">Her kategorinin rengini özelleştir. Değişiklik mevcut tüm görevlere yansır.</p>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        ${Object.entries(CATEGORIES).map(([id, cat]) => {
+          const currentColor = getCatColor(id);
+          return `
+            <div style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.3);border:1px solid rgba(74,55,40,0.2);border-radius:6px;padding:14px">
+              <div style="width:40px;height:40px;border-radius:50%;background:${currentColor};border:2px solid rgba(0,0,0,0.1);flex-shrink:0"></div>
+              <div style="flex:1">
+                <div style="font-family:'Cinzel',serif;font-size:0.9rem;font-weight:600;color:var(--brown-dark)">${cat.icon} ${cat.label}</div>
+                <div style="font-size:0.75rem;color:var(--brown-light);margin-top:2px">${currentColor}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${['#c0392b','#e67e22','#f1c40f','#27ae60','#2980b9','#8e44ad','#16a085','#d35400','#2c3e50','#1a5276'].map(c => `
+                  <div onclick="updateCatColor('${id}','${c}')" 
+                       style="width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;border:${currentColor===c?'3px solid var(--gold)':'2px solid transparent'};transition:all 0.2s"
+                       title="${c}"></div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
 }
 
 // ─────────────────────────────────────────────
