@@ -1236,7 +1236,7 @@ function renderAuthScreen() {
 async function signInWithGoogle() {
   const { error } = await sbClient.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: 'https://sezginildes.github.io/quest-journal' }
   });
   if (error) toast('Giriş hatası: ' + error.message);
 }
