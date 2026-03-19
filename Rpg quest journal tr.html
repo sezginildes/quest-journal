@@ -1281,17 +1281,25 @@ async function loadAndStartApp() {
   startRealtimeSync(currentUser.id);
 
   // 30 saniyede bir buluttan güncelle (cross-device sync)
+  let lastSyncTime = new Date().toISOString();
   setInterval(async () => {
     if (!currentUser) return;
-    const cloudData = await loadCharacterFromCloud(currentUser.id);
-    if (!cloudData) return;
-    const cloudTime = new Date(cloudData._lastSaved || 0);
-    const localTime = new Date(state?._lastSaved || 0);
-    if (cloudTime > localTime) {
-      state = cloudData;
-      render();
-      toast('🔄 Senkronize edildi');
-    }
+    try {
+      const { data, error } = await sbClient
+        .from('characters')
+        .select('data, updated_at')
+        .eq('user_id', currentUser.id)
+        .single();
+      if (error || !data) return;
+      const cloudTime = new Date(data.updated_at || 0);
+      const syncTime = new Date(lastSyncTime);
+      if (cloudTime > syncTime) {
+        lastSyncTime = data.updated_at;
+        state = data.data;
+        render();
+        toast('🔄 Senkronize edildi');
+      }
+    } catch(e) {}
   }, 30000);
 }
 
