@@ -1913,22 +1913,151 @@ let focusSeconds = 25 * 60;
 let focusTotalSeconds = 25 * 60;
 let focusPaused = false;
 let focusQuestId = null;
+let focusMode = 'work'; // 'work' or 'break'
+let pomodoroCount = 0;
+let totalFocusSeconds = 0;
+let focusAccumulator = null;
+
+// Ses üret — Web Audio API
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'work_done') {
+      // 25dk bitti — üç artan nota
+      const notes = [440, 554, 659];
+      notes.forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime + i * 0.2);
+        g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.2 + 0.05);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.2 + 0.4);
+        o.start(ctx.currentTime + i * 0.2);
+        o.stop(ctx.currentTime + i * 0.2 + 0.5);
+      });
+    } else if (type === 'break_done') {
+      // Mola bitti — iki kısa bip
+      [0, 0.3].forEach(delay => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 880;
+        o.type = 'square';
+        g.gain.setValueAtTime(0, ctx.currentTime + delay);
+        g.gain.linearRampToValueAtTime(0.2, ctx.currentTime + delay + 0.02);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + delay + 0.15);
+        o.start(ctx.currentTime + delay);
+        o.stop(ctx.currentTime + delay + 0.2);
+      });
+    }
+    setTimeout(() => ctx.close(), 2000);
+  } catch(e) {}
+}
 
 function startFocus(questId) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest) return;
   focusQuestId = questId;
+  focusMode = 'work';
   focusSeconds = 25 * 60;
   focusTotalSeconds = 25 * 60;
   focusPaused = false;
   renderFocusMode(quest);
+
+  // Toplam odak süresi sayacı
+  focusAccumulator = setInterval(() => {
+    if (!focusPaused && focusMode === 'work') totalFocusSeconds++;
+  }, 1000);
+
   focusTimer = setInterval(() => {
     if (focusPaused) return;
     focusSeconds--;
     updateFocusTimer();
     if (focusSeconds <= 0) {
       clearInterval(focusTimer);
-      focusComplete();
+      if (focusMode === 'work') {
+        pomodoroCount++;
+        // Toplam odak süresini state'e kaydet
+        state.totalFocusMinutes = (state.totalFocusMinutes || 0) + 25;
+        saveState(state);
+        playSound('work_done');
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        startBreak();
+      } else {
+        playSound('break_done');
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        backToWork();
+      }
+    }
+  }, 1000);
+}
+
+function startBreak() {
+  focusMode = 'break';
+  focusSeconds = 5 * 60;
+  focusTotalSeconds = 5 * 60;
+  const overlay = document.getElementById('focus-overlay');
+  if (!overlay) return;
+  const label = overlay.querySelector('.focus-time-label');
+  const title = overlay.querySelector('.focus-title');
+  const pomodoroBadge = overlay.querySelector('#pomodoro-badge');
+  if (label) label.textContent = 'MOLA';
+  if (title) title.textContent = '☕ Mola Zamanı';
+  if (pomodoroBadge) pomodoroBadge.textContent = `🍅 ${pomodoroCount} seans · ⏱ ${Math.floor((state.totalFocusMinutes||0))} dk`;
+  const ring = document.getElementById('focus-ring');
+  if (ring) ring.style.stroke = '#16a085';
+
+  const overlay2 = document.getElementById('focus-overlay');
+  if (overlay2) {
+    overlay2.style.background = 'linear-gradient(135deg, #0d1a15, #0d0803)';
+  }
+
+  focusTimer = setInterval(() => {
+    if (focusPaused) return;
+    focusSeconds--;
+    updateFocusTimer();
+    if (focusSeconds <= 0) {
+      clearInterval(focusTimer);
+      playSound('break_done');
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      backToWork();
+    }
+  }, 1000);
+}
+
+function backToWork() {
+  focusMode = 'work';
+  focusSeconds = 25 * 60;
+  focusTotalSeconds = 25 * 60;
+  const overlay = document.getElementById('focus-overlay');
+  if (overlay) overlay.style.background = '';
+  const label = overlay?.querySelector('.focus-time-label');
+  const title = overlay?.querySelector('.focus-title');
+  const quest = state.quests.find(q => q.id === focusQuestId);
+  if (label) label.textContent = 'ODAK SEANSİ';
+  if (title && quest) title.textContent = quest.title;
+  const ring = document.getElementById('focus-ring');
+  if (ring) ring.style.stroke = 'var(--gold)';
+
+  focusTimer = setInterval(() => {
+    if (focusPaused) return;
+    focusSeconds--;
+    updateFocusTimer();
+    if (focusSeconds <= 0) {
+      clearInterval(focusTimer);
+      pomodoroCount++;
+      state.totalFocusMinutes = (state.totalFocusMinutes || 0) + 25;
+      saveState(state);
+      playSound('work_done');
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      startBreak();
     }
   }, 1000);
 }
@@ -1942,7 +2071,8 @@ function renderFocusMode(quest) {
   el.innerHTML = `
     <div class="focus-category" style="color:${cat.color}">${cat.icon} ${cat.label}</div>
     <div class="focus-title" style="${quest.color ? `color:${quest.color}` : ''}">${escHtml(quest.title)}</div>
-    ${quest.description ? `<div class="focus-desc">${escHtml(quest.description)}</div>` : '<div style="margin-bottom:48px"></div>'}
+    ${quest.description ? `<div class="focus-desc">${escHtml(quest.description)}</div>` : '<div style="margin-bottom:24px"></div>'}
+    <div id="pomodoro-badge" style="font-family:'Cinzel',serif;font-size:0.8rem;color:var(--parchment);opacity:0.6;margin-bottom:20px;letter-spacing:1px">🍅 ${pomodoroCount} seans · ⏱ ${state.totalFocusMinutes||0} dk toplam</div>
     <div class="focus-timer-wrap">
       <svg class="focus-timer-svg" width="200" height="200" viewBox="0 0 200 200">
         <circle class="focus-timer-bg" cx="100" cy="100" r="90"/>
@@ -1961,8 +2091,6 @@ function renderFocusMode(quest) {
     <div class="focus-xp-badge">+${diff.xp} XP · ${diff.stars} ${diff.label}</div>
   `;
   document.body.appendChild(el);
-
-  // ESC ile çık
   document.addEventListener('keydown', focusKeyHandler);
 }
 
@@ -2020,10 +2148,12 @@ function focusCompleteManual() {
 
 function exitFocus() {
   if (focusTimer) clearInterval(focusTimer);
+  if (focusAccumulator) clearInterval(focusAccumulator);
   document.removeEventListener('keydown', focusKeyHandler);
   const el = document.getElementById('focus-overlay');
   if (el) el.remove();
   focusQuestId = null;
+  focusMode = 'work';
 }
 
 function render() {
@@ -2082,7 +2212,8 @@ function render() {
   `;
 
   // Modals
-  if (showQuestModal) html += renderQuestModal();
+  if (showQuestModal === 'edit') html += renderEditModal();
+  else if (showQuestModal) html += renderQuestModal();
   if (showRewardModal) html += renderRewardModal();
   if (showLevelUp) html += renderLevelUpModal();
 
@@ -2150,9 +2281,11 @@ function renderQuestsTab() {
                   <span class="cat-badge cat-${q.category}" style="font-size:0.72rem;padding:3px 9px">${cat.icon} ${cat.label}</span>
                   ${daysLeft !== null ? `<span style="font-size:0.75rem;font-weight:600;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-mid)'}">📅 ${daysLeft <= 0 ? '🔴 Gecikti' : daysLeft + ' gün'}</span>` : ''}
                 </div>
-                <div style="display:flex;gap:4px">
+                <div style="display:flex;gap:4px;flex-wrap:wrap">
                   <button class="btn-complete" style="font-size:0.75rem;padding:6px 10px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
                   <button style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:var(--brown-dark);font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="startFocus(${q.id})">🎯 Odaklan</button>
+                  <button style="background:rgba(41,128,185,0.1);border:1px solid rgba(41,128,185,0.3);color:#2980b9;font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 8px;border-radius:4px;cursor:pointer" onclick="openEditModal(${q.id})" title="Düzenle">✎</button>
+                  <button style="background:rgba(22,160,133,0.1);border:1px solid rgba(22,160,133,0.3);color:#16a085;font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 8px;border-radius:4px;cursor:pointer" onclick="copyQuest(${q.id})" title="Kopyala">⧉</button>
                   <button class="btn-abandon" style="font-size:0.75rem;padding:6px 8px" onclick="abandonQuest(${q.id})">✗</button>
                 </div>
               </div>`;
@@ -2332,11 +2465,12 @@ function renderStatsTab() {
         ).join('')}
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:24px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:24px">
         ${[
           ['🏅', 'Tamamlanan', state.totalCompleted],
           ['🔥', 'En İyi Seri', state.maxQuestsInDay || 0],
-          ['🐉', 'Efsanevi', state.completedLegendary || 0]
+          ['🐉', 'Efsanevi', state.completedLegendary || 0],
+          ['🍅', 'Odak (dk)', state.totalFocusMinutes || 0]
         ].map(([icon, label, val]) => `
           <div style="background:rgba(255,255,255,0.3);border:1px solid rgba(74,55,40,0.2);border-radius:6px;padding:14px;text-align:center">
             <div style="font-size:1.8rem">${icon}</div>
@@ -2517,8 +2651,125 @@ function submitQuest() {
   addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, color: catColor, matrix });
 }
 
+function copyQuest(questId) {
+  const q = state.quests.find(q => q.id === questId);
+  if (!q) return;
+  const copy = {
+    ...JSON.parse(JSON.stringify(q)),
+    id: state.nextQuestId++,
+    createdAt: new Date().toLocaleDateString(),
+    dueDate: null,
+    order: (q.order || 0) + 1
+  };
+  state.quests.push(copy);
+  saveState(state);
+  toast('Görev kopyalandı ⧉');
+  render();
+}
+
+let editingQuestId = null;
+function openEditModal(questId) {
+  editingQuestId = questId;
+  showQuestModal = 'edit';
+  render();
+}
+
+function renderEditModal() {
+  const q = state.quests.find(q => q.id === editingQuestId);
+  if (!q) return '';
+  const diff = DIFFICULTIES[q.difficulty];
+  return `
+    <div class="modal-overlay" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="showQuestModal=false;render()">✕</button>
+        <div class="modal-title">✎ Görevi Düzenle</div>
+        <div class="modal-subtitle">Değişikliklerini kaydet</div>
+        
+        <div class="form-group">
+          <label class="form-label">Görev Başlığı *</label>
+          <input class="form-input" id="eq-title" value="${escHtml(q.title)}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Açıklama</label>
+          <textarea class="form-textarea" id="eq-desc">${escHtml(q.description || '')}</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <select class="form-select" id="eq-cat" onchange="updateEditSubCats()">
+              ${Object.entries(CATEGORIES).map(([k, v]) => `<option value="${k}" ${q.category === k ? 'selected' : ''}>${v.icon} ${v.label}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alt Kategori</label>
+            <select class="form-select" id="eq-subcat">
+              <option value="">— Seç —</option>
+              ${(SUB_CATEGORIES[q.category] || []).map(s => `<option value="${s.id}" ${q.subCategory === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Zorluk *</label>
+          <select class="form-select" id="eq-diff">
+            ${Object.entries(DIFFICULTIES).map(([k, v]) => `<option value="${k}" ${q.difficulty === k ? 'selected' : ''}>${v.stars} ${v.label} (+${v.xp} XP)</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Son Tarih</label>
+          <input class="form-input" id="eq-due" type="date" value="${q.dueDate || ''}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Matris</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+            ${[['q1','🔴 Acil & Önemli'],['q2','🟡 Önemli, Acil Değil'],['q3','🔵 Acil, Önemli Değil'],['q4','⚫ Ne Acil Ne Önemli']].map(([id, label]) => 
+              `<button type="button" class="matrix-btn ${id}-btn ${(q.matrix||'q2')===id?'selected':''}" id="embtn-${id}" onclick="selectEditMatrix('${id}')">${label}</button>`
+            ).join('')}
+          </div>
+          <input type="hidden" id="eq-matrix" value="${q.matrix || 'q2'}" />
+        </div>
+        <button class="btn-sign" onclick="saveEditQuest()">💾 Değişiklikleri Kaydet</button>
+      </div>
+    </div>
+  `;
+}
+
+function updateEditSubCats() {
+  const cat = document.getElementById('eq-cat')?.value;
+  const sel = document.getElementById('eq-subcat');
+  if (!sel) return;
+  const subs = SUB_CATEGORIES[cat] || [];
+  sel.innerHTML = '<option value="">— Seç —</option>' + subs.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+}
+
+function selectEditMatrix(id) {
+  ['q1','q2','q3','q4'].forEach(m => {
+    const btn = document.getElementById('embtn-' + m);
+    if (btn) btn.classList.toggle('selected', m === id);
+  });
+  const input = document.getElementById('eq-matrix');
+  if (input) input.value = id;
+}
+
+function saveEditQuest() {
+  const q = state.quests.find(q => q.id === editingQuestId);
+  if (!q) return;
+  const title = document.getElementById('eq-title')?.value?.trim();
+  if (!title) { toast('Başlık boş olamaz!'); return; }
+  q.title = title;
+  q.description = document.getElementById('eq-desc')?.value?.trim() || '';
+  q.category = document.getElementById('eq-cat')?.value || q.category;
+  q.subCategory = document.getElementById('eq-subcat')?.value || null;
+  q.difficulty = document.getElementById('eq-diff')?.value || q.difficulty;
+  q.dueDate = document.getElementById('eq-due')?.value || null;
+  q.matrix = document.getElementById('eq-matrix')?.value || q.matrix;
+  showQuestModal = false;
+  editingQuestId = null;
+  saveState(state);
+  toast('Görev güncellendi ✓');
+  render();
+}
 function openQuestModal() { showQuestModal = true; render(); }
-function closeModal(e) { if (e.target.classList.contains('modal-overlay')) { showQuestModal = false; showRewardModal = false; render(); } }
+function closeModal(e) { if (e.target.classList.contains('modal-overlay')) { showQuestModal = false; showRewardModal = false; editingQuestId = null; render(); } }
 
 // ── REWARD MODAL ──
 function renderRewardModal() {
