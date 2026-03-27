@@ -321,60 +321,100 @@ body {
   gap: 8px;
 }
 
-/* QUEST CARDS */
-.quest-board {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* QUICK ADD BAR (NEW) */
+.quick-add-wrap {
+  display: flex; gap: 10px; margin-bottom: 20px;
 }
-.quest-card {
-  background: var(--parchment-white);
-  border: 1px solid var(--parchment-dark);
-  border-radius: 4px;
-  padding: 14px;
-  position: relative;
-  cursor: pointer;
+.quick-add-input {
+  flex: 1; padding: 14px 20px; border-radius: 30px;
+  border: 2px solid var(--parchment-dark);
+  background: rgba(255,255,255,0.7);
+  font-family: 'Cinzel', serif; font-size: 1rem;
+  outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
   transition: all 0.2s;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
 }
-.quest-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 4px 4px 16px rgba(0,0,0,0.25);
+.quick-add-input:focus {
+  background: white; border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(212,175,55,0.2), inset 0 2px 4px rgba(0,0,0,0.05);
 }
-.quest-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  border-radius: 4px 0 0 4px;
+.btn-quick-add {
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  color: var(--brown-deep); border: none; border-radius: 30px;
+  padding: 0 24px; font-family: 'Cinzel', serif; font-weight: bold;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
 }
-.quest-card.cat-beden::before   { background: #c0392b; }
-.quest-card.cat-zihin::before   { background: #2980b9; }
-.quest-card.cat-kariyer::before { background: #d4af37; }
-.quest-card.cat-iliski::before  { background: #8e44ad; }
-.quest-card.cat-anlam::before   { background: #16a085; }
-.quest-card.cat-sistem::before  { background: #2c3e50; }
+.btn-quick-add:hover {
+  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+}
 
-.quest-title {
-  font-family: 'Cinzel', serif;
-  font-size: 0.95rem;
-  color: var(--brown-dark);
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-.quest-desc {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 0.9rem;
-  color: var(--brown-light);
-  font-style: italic;
+/* EISENHOWER MATRIX */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   margin-bottom: 8px;
 }
-.quest-meta {
+.matrix-quadrant {
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 120px;
+}
+.matrix-quadrant-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
 }
+.q1 { background: rgba(192,57,43,0.08);  border: 1px solid rgba(192,57,43,0.25); }
+.q2 { background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.3); }
+.q3 { background: rgba(41,128,185,0.08); border: 1px solid rgba(41,128,185,0.25); }
+.q4 { background: rgba(100,100,100,0.06);border: 1px solid rgba(100,100,100,0.2); }
+.q1 .matrix-quadrant-title { color: #c0392b; }
+.q2 .matrix-quadrant-title { color: #b7950b; }
+.q3 .matrix-quadrant-title { color: #2980b9; }
+.q4 .matrix-quadrant-title { color: #7f8c8d; }
+
+/* MODERNIZED MATRIX CARDS */
+.matrix-card {
+  background: rgba(250, 240, 216, 0.85); /* Glassmorphism base */
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: grab;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.6);
+  border-left: 3px solid transparent;
+  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+.matrix-card:hover { 
+  transform: translateY(-3px) scale(1.01); 
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+  border-color: var(--gold);
+}
+.matrix-card.dragging { opacity: 0.5; cursor: grabbing; }
+.matrix-quadrant.drag-over { box-shadow: inset 0 0 0 2px var(--gold); }
+
+/* CARD ACTIONS (HIDDEN BY DEFAULT) */
+.card-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.2s ease, margin-top 0.2s ease;
+}
+.matrix-card:hover .card-actions {
+  opacity: 1;
+  max-height: 50px;
+  margin-top: 10px;
+}
+
 .diff-badge {
   font-size: 0.7rem;
   font-family: 'Cinzel', serif;
@@ -408,52 +448,6 @@ body {
 .cat-iliski  { background: rgba(142,68,173,0.1); color: #8e44ad; }
 .cat-anlam   { background: rgba(22,160,133,0.1); color: #16a085; }
 .cat-sistem  { background: rgba(44,62,80,0.1);   color: #2c3e50; }
-
-/* EISENHOWER MATRIX */
-.matrix-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-.matrix-quadrant {
-  border-radius: 6px;
-  padding: 12px;
-  min-height: 120px;
-}
-.matrix-quadrant-title {
-  font-family: 'Cinzel', serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.q1 { background: rgba(192,57,43,0.08);  border: 1px solid rgba(192,57,43,0.25); }
-.q2 { background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.3); }
-.q3 { background: rgba(41,128,185,0.08); border: 1px solid rgba(41,128,185,0.25); }
-.q4 { background: rgba(100,100,100,0.06);border: 1px solid rgba(100,100,100,0.2); }
-.q1 .matrix-quadrant-title { color: #c0392b; }
-.q2 .matrix-quadrant-title { color: #b7950b; }
-.q3 .matrix-quadrant-title { color: #2980b9; }
-.q4 .matrix-quadrant-title { color: #7f8c8d; }
-
-.matrix-card {
-  background: rgba(255,255,255,0.6);
-  border-radius: 4px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
-  cursor: grab;
-  transition: all 0.2s;
-  border-left: 3px solid transparent;
-  font-size: 0.9rem;
-  box-shadow: 1px 1px 4px rgba(0,0,0,0.08);
-}
-.matrix-card:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
-.matrix-card.dragging { opacity: 0.5; cursor: grabbing; }
-.matrix-quadrant.drag-over { box-shadow: inset 0 0 0 2px var(--gold); }
 
 .matrix-btn {
   display: inline-flex;
@@ -604,11 +598,6 @@ body {
   box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
 }
 
-.quest-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-}
 .btn-complete {
   flex: 1;
   background: linear-gradient(135deg, var(--green-health), #3d8b3d);
@@ -1212,7 +1201,6 @@ let sbClient = null;
 
 let currentUser = null;
 
-// Giriş ekranını göster
 function renderAuthScreen() {
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -1248,7 +1236,6 @@ async function signOut() {
   renderAuthScreen();
 }
 
-// Karakter verisini Supabase'den yükle
 async function loadCharacterFromCloud(userId) {
   const { data, error } = await sbClient
     .from('characters')
@@ -1259,7 +1246,6 @@ async function loadCharacterFromCloud(userId) {
   return data.data;
 }
 
-// Realtime sync — başka cihazdan değişiklik gelince otomatik güncelle
 let realtimeChannel = null;
 function startRealtimeSync(userId) {
   if (realtimeChannel) sbClient.removeChannel(realtimeChannel);
@@ -1280,13 +1266,11 @@ function startRealtimeSync(userId) {
     .subscribe();
 }
 
-// Kaydet ve diğer cihazlara broadcast et
 async function saveCharacterToCloud(userId, characterData) {
   await sbClient
     .from('characters')
     .upsert({ user_id: userId, data: characterData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
 
-  // Diğer açık sekmelere/cihazlara anlık bildir
   if (realtimeChannel) {
     realtimeChannel.send({
       type: 'broadcast',
@@ -1296,7 +1280,6 @@ async function saveCharacterToCloud(userId, characterData) {
   }
 }
 
-// Supabase log fonksiyonu
 async function logToSupabase(data) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/quest_logs`, {
@@ -1315,12 +1298,9 @@ async function logToSupabase(data) {
   }
 }
 
-// Auth başlat
 async function initAuth() {
-  // Client'ı burada initialize et — CDN yüklenmiş olur
   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Double hash fix — ## yerine # olmalı
   if (window.location.hash.startsWith('#access_token') || window.location.href.includes('##access_token')) {
     const fixedHash = window.location.hash.replace(/^#+/, '#');
     if (fixedHash !== window.location.hash) {
@@ -1336,7 +1316,6 @@ async function initAuth() {
     renderAuthScreen();
   }
 
-  // Auth değişikliklerini dinle
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
@@ -1350,7 +1329,6 @@ async function initAuth() {
 }
 
 async function loadAndStartApp() {
-  // Önce buluttan yükle
   const cloudData = await loadCharacterFromCloud(currentUser.id);
   if (cloudData) {
     state = cloudData;
@@ -1367,7 +1345,6 @@ async function loadAndStartApp() {
     }
   }
 
-  // Eski kategori isimlerini yeniye migrate et
   if (state) {
     const catMap = {
       health: 'beden', intelligence: 'zihin',
@@ -1376,7 +1353,6 @@ async function loadAndStartApp() {
     const migrateCat = (cat) => catMap[cat] || cat;
     if (state.quests) state.quests.forEach(q => { q.category = migrateCat(q.category); });
     if (state.completedQuests) state.completedQuests.forEach(q => { q.category = migrateCat(q.category); });
-    // catCounts migrate
     if (state.catCounts) {
       const newCounts = { beden: 0, zihin: 0, kariyer: 0, iliski: 0, anlam: 0, sistem: 0 };
       Object.entries(state.catCounts).forEach(([k, v]) => { newCounts[migrateCat(k)] = (newCounts[migrateCat(k)] || 0) + v; });
@@ -1387,11 +1363,8 @@ async function loadAndStartApp() {
 
   initParticles();
   render();
-  
-  // Realtime sync başlat
   startRealtimeSync(currentUser.id);
 
-  // 30 saniyede bir buluttan güncelle (cross-device sync)
   let lastSyncTime = new Date().toISOString();
   setInterval(async () => {
     if (!currentUser) return;
@@ -1438,10 +1411,10 @@ const CATEGORIES = {
 
 const SUB_CATEGORIES = {
   beden: [
-    { id: 'fizik',   label: '🏋️ Fiziksel Kondisyon' },
-    { id: 'uyku',    label: '😴 Uyku & Dinlenme' },
-    { id: 'beslen',  label: '🥗 Beslenme' },
-    { id: 'mental',  label: '🧘 Stres & Nefes' }
+    { id: 'fizik',  label: '🏋️ Fiziksel Kondisyon' },
+    { id: 'uyku',   label: '😴 Uyku & Dinlenme' },
+    { id: 'beslen', label: '🥗 Beslenme' },
+    { id: 'mental', label: '🧘 Stres & Nefes' }
   ],
   zihin: [
     { id: 'kocluk',    label: '🎓 Koçluk & Pedagoji' },
@@ -1476,13 +1449,13 @@ const SUB_CATEGORIES = {
 };
 
 const CLASSES = [
-  { id: 'warrior',   icon: '⚔️', name: 'Savaşçı',    bonus: '+20% Beden XP\'si',       stat: 'beden',   mult: 1.2 },
-  { id: 'scholar',   icon: '📜', name: 'Alim',        bonus: '+20% Zihin XP\'si',       stat: 'zihin',   mult: 1.2 },
-  { id: 'merchant',  icon: '💎', name: 'Tüccar',      bonus: '+20% Kariyer XP\'si',     stat: 'kariyer', mult: 1.2 },
+  { id: 'warrior',   icon: '⚔️', name: 'Savaşçı',    bonus: '+20% Beden XP\'si',        stat: 'beden',   mult: 1.2 },
+  { id: 'scholar',   icon: '📜', name: 'Alim',       bonus: '+20% Zihin XP\'si',        stat: 'zihin',   mult: 1.2 },
+  { id: 'merchant',  icon: '💎', name: 'Tüccar',      bonus: '+20% Kariyer XP\'si',      stat: 'kariyer', mult: 1.2 },
   { id: 'diplomat',  icon: '🕊️', name: 'Diplomat',    bonus: '+20% İlişkiler XP\'si',   stat: 'iliski',  mult: 1.2 },
-  { id: 'sage',      icon: '🌿', name: 'Bilge',       bonus: '+20% Anlam XP\'si',       stat: 'anlam',   mult: 1.2 },
-  { id: 'engineer',  icon: '⚙️', name: 'Mühendis',   bonus: '+20% Sistem XP\'si',      stat: 'sistem',  mult: 1.2 },
-  { id: 'adventurer',icon: '🗺️', name: 'Maceracı',    bonus: '+5% Tüm XP',             stat: 'all',     mult: 1.05 }
+  { id: 'sage',      icon: '🌿', name: 'Bilge',       bonus: '+20% Anlam XP\'si',        stat: 'anlam',   mult: 1.2 },
+  { id: 'engineer',  icon: '⚙️', name: 'Mühendis',   bonus: '+20% Sistem XP\'si',       stat: 'sistem',  mult: 1.2 },
+  { id: 'adventurer',icon: '🗺️', name: 'Maceracı',    bonus: '+5% Tüm XP',              stat: 'all',     mult: 1.05 }
 ];
 
 const LEVEL_FLAVORS = [
@@ -1511,7 +1484,7 @@ const DEFAULT_REWARDS = [
 ];
 
 const ACHIEVEMENTS = [
-  { id: 'first',       icon: '🌱', name: 'İlk Adım',       desc: 'İlk görevini tamamla',          condition: (s) => s.totalCompleted >= 1 },
+  { id: 'first',       icon: '🌱', name: 'İlk Adım',        desc: 'İlk görevini tamamla',          condition: (s) => s.totalCompleted >= 1 },
   { id: 'apprentice',  icon: '📜', name: 'Çırak',           desc: 'Seviye 5\'e ulaş',              condition: (s) => s.level >= 5 },
   { id: 'journeyman',  icon: '⚔️', name: 'Kalfa',           desc: 'Seviye 10\'a ulaş',             condition: (s) => s.level >= 10 },
   { id: 'streak7',     icon: '🔥', name: 'Ateş Haftası',    desc: '7 günlük seri',                 condition: (s) => s.streak >= 7 },
@@ -1579,7 +1552,7 @@ let pendingReward = null;
 let showLevelUp = false;
 let newLevel = 1;
 let currentToast = null;
-let lastCompletedQuest = null; // Geri alma için
+let lastCompletedQuest = null; 
 let undoTimer = null;
 
 // ─────────────────────────────────────────────
@@ -1602,24 +1575,29 @@ function initParticles() {
 }
 
 // ─────────────────────────────────────────────
-// STREAK LOGIC
+// STREAK LOGIC (Şefkatli Seri Koruması)
 // ─────────────────────────────────────────────
 
 function updateStreak() {
   const today = new Date().toDateString();
   const yesterday = new Date(Date.now() - 86400000).toDateString();
+  const twoDaysAgo = new Date(Date.now() - 86400000 * 2).toDateString(); // Affetme payı
+
   if (!state.lastQuestDate) {
     state.streak = 1;
   } else if (state.lastQuestDate === today) {
-    // same day, no change
+    // Aynı gün, değişiklik yok
   } else if (state.lastQuestDate === yesterday) {
     state.streak++;
+  } else if (state.lastQuestDate === twoDaysAgo) {
+    // DÜN GİRİLMEDİ AMA SERİ KIRILMADI (ADHD Affetme Mekaniği)
+    state.streak++; 
+    toast('❄️ İrade Kalkanı devreye girdi! Serin bozulmadı.');
   } else {
     state.streak = 1;
   }
   state.lastQuestDate = today;
 
-  // Today's count
   if (state.todayDate !== today) {
     state.todayCount = 0;
     state.todayDate = today;
@@ -1627,7 +1605,6 @@ function updateStreak() {
   state.todayCount++;
   if (state.todayCount > (state.maxQuestsInDay || 0)) state.maxQuestsInDay = state.todayCount;
 
-  // Heatmap
   state.heatmap = state.heatmap || {};
   state.heatmap[today] = (state.heatmap[today] || 0) + 1;
 }
@@ -1647,7 +1624,6 @@ function rollReward(difficulty) {
   
   if (Math.random() > chance) return null;
 
-  // Tier roll
   const tierRoll = Math.random();
   let tier;
   if (tierRoll < 0.01) tier = 'legendary';
@@ -1666,6 +1642,37 @@ function rollReward(difficulty) {
 }
 
 // ─────────────────────────────────────────────
+// QUICK ADD LOGIC (Yeni)
+// ─────────────────────────────────────────────
+
+function quickAddQuest() {
+  const input = document.getElementById('quick-quest-input');
+  if (!input) return;
+  const title = input.value.trim();
+  if (!title) return;
+  
+  // Varsayılan değerlerle anında ekle
+  const quest = {
+    id: state.nextQuestId++,
+    title: title,
+    description: '',
+    category: 'zihin', 
+    subCategory: null,
+    difficulty: 'medium', 
+    dueDate: null,
+    color: getCatColor('zihin'),
+    matrix: 'q2', // Önemli ama acil değil bölgesine gider
+    createdAt: new Date().toLocaleDateString()
+  };
+  
+  state.quests.push(quest);
+  saveState(state);
+  input.value = '';
+  toast('✨ Hızlı görev eklendi! Detayları sonra düzenleyebilirsin.');
+  render();
+}
+
+// ─────────────────────────────────────────────
 // QUEST COMPLETION
 // ─────────────────────────────────────────────
 
@@ -1673,58 +1680,46 @@ function completeQuest(questId) {
   const idx = state.quests.findIndex(q => q.id === questId);
   if (idx === -1) return;
 
-  // Geri alma için snapshot al
   const snapshot = JSON.parse(JSON.stringify(state));
-  
   const quest = state.quests.splice(idx, 1)[0];
   
-  // XP calculation
   let xp = DIFFICULTIES[quest.difficulty].xp;
   
-  // Streak bonus
   const streakMult = 1 + Math.min(state.streak * 0.10, 1.0);
   xp = Math.round(xp * streakMult);
 
-  // Class bonus
   const cls = CLASSES.find(c => c.id === state.charClass);
   if (cls) {
     if (cls.stat === 'all') xp = Math.round(xp * cls.mult);
     else if (cls.stat === quest.category) xp = Math.round(xp * cls.mult);
   }
 
-  // First quest of day bonus
   if (state.todayCount === 0) xp += 25;
 
   updateStreak();
 
-  // Category mastery
   state.catCounts[quest.category] = (state.catCounts[quest.category] || 0) + 1;
   if (state.catCounts[quest.category] % 10 === 0) xp += 50;
 
   state.totalCompleted++;
   if (quest.difficulty === 'legendary') state.completedLegendary++;
 
-  // Stat gain
   const catToStat = { beden: 'vitality', zihin: 'wisdom', kariyer: 'fortune', iliski: 'charisma', anlam: 'wisdom', sistem: 'fortune' };
   const statKey = catToStat[quest.category];
   if (statKey && state.stats[statKey] < 100) state.stats[statKey] = Math.min(100, state.stats[statKey] + 1);
 
-  // XP add
   const prevLevel = getLevelFromXP(state.xp).level;
   state.xp += xp;
   const newLvl = getLevelFromXP(state.xp).level;
 
-  // Log
   quest.completedAt = new Date().toLocaleDateString();
   quest.xpGained = xp;
   state.completedQuests.unshift(quest);
   if (state.completedQuests.length > 50) state.completedQuests.pop();
 
-  // Check achievements
   checkAchievements();
   saveState(state);
 
-  // Supabase'e kayıt
   const rewardRoll = rollReward(quest.difficulty);
   logToSupabase({
     user_id: state.name || 'sezgin',
@@ -1739,17 +1734,14 @@ function completeQuest(questId) {
     completed_date: new Date().toISOString().split('T')[0]
   });
 
-  // Float XP
   floatXP(xp);
 
-  // Level up?
   if (newLvl > prevLevel) {
     newLevel = newLvl;
     showLevelUp = true;
     spawnBurstParticles();
   }
 
-  // Reward modal — aynı roll'u kullan
   pendingReward = { reward: rewardRoll, xp };
   showRewardModal = true;
 
@@ -1882,22 +1874,17 @@ function undoComplete() {
 function undoFromLog(logIdx) {
   const quest = state.completedQuests[logIdx];
   if (!quest) return;
-  // XP geri al
   const xpToRemove = quest.xpGained || DIFFICULTIES[quest.difficulty]?.xp || 0;
   state.xp = Math.max(0, state.xp - xpToRemove);
-  // Stat geri al
   const catToStat = { beden: 'vitality', zihin: 'wisdom', kariyer: 'fortune', iliski: 'charisma', anlam: 'wisdom', sistem: 'fortune' };
   const statKey = catToStat[quest.category];
   if (statKey && state.stats[statKey] > 10) state.stats[statKey] = Math.max(10, state.stats[statKey] - 1);
-  // Sayaçları geri al
   state.totalCompleted = Math.max(0, state.totalCompleted - 1);
   if (quest.difficulty === 'legendary') state.completedLegendary = Math.max(0, state.completedLegendary - 1);
   if (state.catCounts[quest.category]) state.catCounts[quest.category] = Math.max(0, state.catCounts[quest.category] - 1);
-  // Görevi aktif listeye geri ekle
   delete quest.completedAt;
   delete quest.xpGained;
   state.quests.unshift(quest);
-  // Log'dan çıkar
   state.completedQuests.splice(logIdx, 1);
   saveState(state);
   toast('Görev aktif listeye geri alındı ↩');
@@ -1913,12 +1900,11 @@ let focusSeconds = 25 * 60;
 let focusTotalSeconds = 25 * 60;
 let focusPaused = false;
 let focusQuestId = null;
-let focusMode = 'work'; // 'work' or 'break'
+let focusMode = 'work';
 let pomodoroCount = 0;
 let totalFocusSeconds = 0;
 let focusAccumulator = null;
 
-// Ses üret — Web Audio API
 function playSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1928,7 +1914,6 @@ function playSound(type) {
     gain.connect(ctx.destination);
 
     if (type === 'work_done') {
-      // 25dk bitti — üç artan nota
       const notes = [440, 554, 659];
       notes.forEach((freq, i) => {
         const o = ctx.createOscillator();
@@ -1943,7 +1928,6 @@ function playSound(type) {
         o.stop(ctx.currentTime + i * 0.2 + 0.5);
       });
     } else if (type === 'break_done') {
-      // Mola bitti — iki kısa bip
       [0, 0.3].forEach(delay => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
@@ -1971,7 +1955,6 @@ function startFocus(questId) {
   focusPaused = false;
   renderFocusMode(quest);
 
-  // Toplam odak süresi sayacı
   focusAccumulator = setInterval(() => {
     if (!focusPaused && focusMode === 'work') totalFocusSeconds++;
   }, 1000);
@@ -1984,7 +1967,6 @@ function startFocus(questId) {
       clearInterval(focusTimer);
       if (focusMode === 'work') {
         pomodoroCount++;
-        // Toplam odak süresini state'e kaydet
         state.totalFocusMinutes = (state.totalFocusMinutes || 0) + 25;
         saveState(state);
         playSound('work_done');
@@ -2108,7 +2090,6 @@ function updateFocusTimer() {
   if (ring) {
     const pct = focusSeconds / focusTotalSeconds;
     ring.style.strokeDashoffset = 565 * (1 - pct);
-    // Renk değişimi — kırmızıya döner son 5 dakikada
     if (focusSeconds < 300) ring.style.stroke = '#e74c3c';
     else if (focusSeconds < 600) ring.style.stroke = '#f39c12';
     else ring.style.stroke = 'var(--gold)';
@@ -2122,7 +2103,6 @@ function toggleFocusPause() {
 }
 
 function focusComplete() {
-  // Timer bitti — otomatik tamamla
   const overlay = document.getElementById('focus-overlay');
   if (overlay) {
     overlay.innerHTML = `
@@ -2137,7 +2117,6 @@ function focusComplete() {
       </div>
     `;
   }
-  // Titreşim (mobil)
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
 }
 
@@ -2171,7 +2150,6 @@ function render() {
       ${currentUser ? `<div style="position:absolute;top:20px;right:0;display:flex;align-items:center;gap:10px"><span style="font-family:'Caveat',cursive;color:var(--parchment);opacity:0.6;font-size:0.9rem">${currentUser.email}</span><button onclick="signOut()" style="background:rgba(139,37,0,0.2);border:1px solid rgba(139,37,0,0.4);color:var(--parchment);font-family:'Cinzel',serif;font-size:0.7rem;padding:4px 12px;border-radius:4px;cursor:pointer;letter-spacing:0.5px">Çıkış</button></div>` : ''}
     </div>
 
-    <!-- CHAR BAR -->
     <div class="char-bar">
       <div class="char-avatar">${getClassEmoji(state.charClass)}</div>
       <div class="char-info">
@@ -2198,20 +2176,17 @@ function render() {
       </div>
     </div>
 
-    <!-- TABS -->
     <div class="nav-tabs">
       ${['quests','character','achievements','rewards','stats'].map(t => `
         <button class="tab-btn ${activeTab === t ? 'active' : ''}" onclick="switchTab('${t}')">${tabLabel(t)}</button>
       `).join('')}
     </div>
 
-    <!-- BOOK -->
     <div class="book">
       ${renderTab()}
     </div>
   `;
 
-  // Modals
   if (showQuestModal === 'edit') html += renderEditModal();
   else if (showQuestModal) html += renderQuestModal();
   if (showRewardModal) html += renderRewardModal();
@@ -2248,10 +2223,16 @@ function renderQuestsTab() {
     { id: 'q4', label: '⚫ Ne Acil Ne Önemli',    cls: 'q4', hint: 'Ertele/Sil' },
   ];
 
-  // Matrise göre grupla — order alanına göre sırala
   const grouped = { q1: [], q2: [], q3: [], q4: [] };
   active.forEach(q => { const m = q.matrix || 'q2'; grouped[m].push(q); });
   Object.keys(grouped).forEach(m => grouped[m].sort((a, b) => (a.order || 0) - (b.order || 0)));
+
+  const quickAddHtml = `
+    <div class="quick-add-wrap">
+      <input type="text" id="quick-quest-input" class="quick-add-input" placeholder="Hızlıca bir görev yaz ve Enter'a bas..." onkeypress="if(event.key === 'Enter') quickAddQuest()">
+      <button class="btn-quick-add" onclick="quickAddQuest()">Ekle</button>
+    </div>
+  `;
 
   const matrixHtml = `
     <div class="matrix-grid">
@@ -2271,7 +2252,7 @@ function renderQuestsTab() {
                    ondragstart="dragStart(event,${q.id})"
                    ondragover="event.preventDefault();event.stopPropagation()"
                    ondrop="dropOnCard(event,${q.id},'${md.id}')"
-                   style="${q.color ? `border-left-color:${q.color};background:${q.color}18;` : ''}"
+                   style="${q.color ? `border-left-color:${q.color};` : ''}"
                    id="qcard-${q.id}">
                 <div style="font-family:'Cinzel',serif;font-size:0.85rem;font-weight:700;color:${q.color || 'var(--brown-dark)'};margin-bottom:6px;line-height:1.3">${escHtml(q.title)}</div>
                 ${q.description ? `<div style="font-size:0.8rem;color:var(--brown-mid);font-style:italic;margin-bottom:6px;line-height:1.4">${escHtml(q.description)}</div>` : ''}
@@ -2281,7 +2262,7 @@ function renderQuestsTab() {
                   <span class="cat-badge cat-${q.category}" style="font-size:0.72rem;padding:3px 9px">${cat.icon} ${cat.label}</span>
                   ${daysLeft !== null ? `<span style="font-size:0.75rem;font-weight:600;color:${daysLeft <= 1 ? 'var(--red-ink)' : 'var(--brown-mid)'}">📅 ${daysLeft <= 0 ? '🔴 Gecikti' : daysLeft + ' gün'}</span>` : ''}
                 </div>
-                <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <div class="card-actions">
                   <button class="btn-complete" style="font-size:0.75rem;padding:6px 10px" onclick="completeQuest(${q.id})">✓ Tamamla</button>
                   <button style="background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:var(--brown-dark);font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="startFocus(${q.id})">🎯 Odaklan</button>
                   <button style="background:rgba(41,128,185,0.1);border:1px solid rgba(41,128,185,0.3);color:#2980b9;font-family:'Cinzel',serif;font-size:0.72rem;padding:6px 8px;border-radius:4px;cursor:pointer" onclick="openEditModal(${q.id})" title="Düzenle">✎</button>
@@ -2293,7 +2274,6 @@ function renderQuestsTab() {
         </div>
       `).join('')}
     </div>
-    <button class="btn-add-quest" onclick="openQuestModal()">✦ Yeni Görev Kabul Et ✦</button>
   `;
 
   const logEntries = completed.length > 0 ? completed.map((q, idx) => {
@@ -2311,7 +2291,9 @@ function renderQuestsTab() {
     <div class="page-grid">
       <div class="page-section" style="grid-column:1/-1">
         <h2>⚔️ Görev Matrisi</h2>
-        ${active.length > 0 ? matrixHtml : `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">Aktif görev yok. Macera seni bekliyor...</div></div><button class="btn-add-quest" onclick="openQuestModal()">✦ Yeni Görev Kabul Et ✦</button>`}
+        ${quickAddHtml}
+        ${active.length > 0 ? matrixHtml : `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">Aktif görev yok. Hızlı Ekleme çubuğunu kullanarak macera yarat...</div></div>`}
+        <button class="btn-add-quest" style="margin-top:16px" onclick="openQuestModal()">✦ Detaylı Görev Formu ✦</button>
       </div>
       <div class="page-section" style="grid-column:1/-1">
         <h2>📜 Görev Tarihi</h2>
@@ -2573,7 +2555,6 @@ function dropToMatrix(event, matrixId, el) {
   const q = state.quests.find(q => q.id === draggedQuestId);
   if (q) {
     q.matrix = matrixId;
-    // En sona ekle
     const inMatrix = state.quests.filter(x => (x.matrix || 'q2') === matrixId);
     q.order = inMatrix.length * 10;
     saveState(state);
@@ -2595,11 +2576,9 @@ function dropOnCard(event, targetQuestId, matrixId) {
   const toIdx = inMatrix.findIndex(q => q.id === targetQuestId);
 
   if (fromIdx === -1 || toIdx === -1) {
-    // Farklı kutudan geliyor — sadece matris değiştir
     const q = state.quests.find(q => q.id === draggedQuestId);
     if (q) { q.matrix = matrixId; q.order = toIdx * 10; }
   } else {
-    // Aynı kutu içinde sıra değiştir
     const moved = inMatrix.splice(fromIdx, 1)[0];
     inMatrix.splice(toIdx, 0, moved);
     inMatrix.forEach((q, i) => { q.order = i * 10; });
@@ -2610,17 +2589,14 @@ function dropOnCard(event, targetQuestId, matrixId) {
   draggedQuestId = null;
 }
 
-// Kategori rengini al — kullanıcı özelleştirmişse ondan, yoksa varsayılandan
 function getCatColor(catId) {
   const custom = state.categoryColors?.[catId];
   return custom || CATEGORIES[catId]?.color || '#4a3728';
 }
 
-// Kategori rengini güncelle
 function updateCatColor(catId, color) {
   if (!state.categoryColors) state.categoryColors = {};
   state.categoryColors[catId] = color;
-  // Mevcut görevlerin renklerini de güncelle
   state.quests.forEach(q => { if (q.category === catId) q.color = color; });
   saveState(state);
   render();
@@ -2645,7 +2621,6 @@ function submitQuest() {
   const due = document.getElementById('q-due')?.value;
   const matrix = document.getElementById('q-matrix')?.value || 'q2';
   if (!title || !cat || !diff) { toast('Tüm zorunlu alanları doldur!'); return; }
-  // Rengi kategoriden al, kullanıcı özel renk belirlemediyse
   const catColor = getCatColor(cat);
   showQuestModal = false;
   addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, color: catColor, matrix });
@@ -2895,7 +2870,6 @@ function beginJourney() {
   const title = document.getElementById('s-title')?.value?.trim();
   if (!name) { toast('Bir isme sahip olmalısın, kahraman!'); return; }
   state = defaultState(name, pendingClass || 'adventurer', title);
-  // Başlangıç görevleri
   state.quests = [
     { id: state.nextQuestId++, title: 'Bugünkü en önemli görevini tamamla', description: 'Zihninde en büyük ejderhayı yüzüne bak.', category: 'zihin', difficulty: 'medium', createdAt: new Date().toLocaleDateString() },
     { id: state.nextQuestId++, title: '30 dakika egzersiz yap', description: 'Beden ruhun evidir. Onu güçlendir.', category: 'beden', difficulty: 'easy', createdAt: new Date().toLocaleDateString() }
@@ -2961,7 +2935,6 @@ function getClassName(id) {
 initParticles();
 initAuth();
 
-// PWA Service Worker kaydı
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
