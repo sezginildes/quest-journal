@@ -1215,8 +1215,8 @@ let currentUser = null;
 
 async function saveCheckin(tip, veri) {
   if (!currentUser) {
-    toast('Hata: Giriş yapılmamış!');
-    return;
+    alert("HATA: Oturum kapalı görünüyor!");
+    return false;
   }
   
   const { data, error } = await sbClient
@@ -1229,10 +1229,10 @@ async function saveCheckin(tip, veri) {
     }, { onConflict: 'user_id,tarih,tip' });
 
   if (error) {
-    // Supabase'in gizli hatasını ekrana basıyoruz
-    toast('Supabase Hatası: ' + error.message);
-    console.error('Supabase detaylı hata:', error);
+    alert("SUPABASE KAYIT HATASI:\n" + error.message);
+    return false;
   }
+  return true;
 }
 
 async function getCheckins(gun = 7) {
@@ -2703,6 +2703,27 @@ async function submitSabah() {
   checkinMode = 'aksam';
   render();
 }
+async function saveCheckin(tip, veri) {
+  if (!currentUser) {
+    alert("HATA: Oturum kapalı görünüyor!");
+    return false;
+  }
+  
+  const { data, error } = await sbClient
+    .from('checkins')
+    .upsert({
+      user_id: currentUser.id,
+      tarih: new Date().toISOString().split('T')[0],
+      tip: tip,
+      veri: veri
+    }, { onConflict: 'user_id,tarih,tip' });
+
+  if (error) {
+    alert("SUPABASE KAYIT HATASI:\n" + error.message);
+    return false;
+  }
+  return true;
+}
 
 async function submitAksam() {
   const perf = document.getElementById('a_perf')?.value;
@@ -2738,7 +2759,10 @@ async function submitAksam() {
     yansima: { niyette_kalindi_mi: niyetKaldimMi, kendime_not: kendimeNot, dokuz_kutu: nineBox }
   };
   
-  await saveCheckin('aksam_rutini', veri);
+  // KAYIT İŞLEMİ (Eğer başarısızsa fonksiyondan çıkıp ekranı kapatmaz, HATA verir)
+  const kayitBasarili = await saveCheckin('aksam_rutini', veri);
+  if (!kayitBasarili) return; 
+
   toast('🌙 Alacakaranlık Ritüeli tamamlandı. İyi dinlenmeler!');
   
   // XP ve Seviye Atlama Kontrolü
@@ -2756,12 +2780,12 @@ async function submitAksam() {
   checkAchievements();
   saveState(state);
   
-  // GÜNÜ GERÇEKTEN KAPATAN KISIM:
-  activeTab = 'quests';   // Görevler sekmesine geri dön
-  checkinMode = 'sabah';  // Ritüeli yarın sabah için hazırla
-  
-  render();
+  // GÜNÜ KAPAT VE EKRANA DÖN
+  activeTab = 'quests'; 
+  checkinMode = 'sabah'; 
+  render(); 
 }
+ 
 
 // ── QUEST MODAL ──
 function renderQuestModal() {
