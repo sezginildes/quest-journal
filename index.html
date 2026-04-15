@@ -1279,6 +1279,33 @@ async function saveCharacterToCloud(userId, characterData) {
 }
 
 async function logToSupabase(data) {
+  
+  async function saveCheckin(tip, veri) {
+  if (!currentUser) return;
+  try {
+    await sbClient
+      .from('checkins')
+      .upsert({
+        user_id: currentUser.id,
+        tarih: new Date().toISOString().split('T')[0],
+        tip: tip,
+        veri: veri
+      }, { onConflict: 'user_id,tarih,tip' });
+  } catch(e) {
+    console.warn('Check-in kayıt hatası:', e);
+  }
+}
+
+async function getCheckins(gun = 7) {
+  if (!currentUser) return [];
+  const { data } = await sbClient
+    .from('checkins')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('tarih', { ascending: false })
+    .limit(gun * 2);
+  return data || [];
+}
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/quest_logs`, {
       method: 'POST',
