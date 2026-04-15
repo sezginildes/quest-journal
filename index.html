@@ -2544,6 +2544,7 @@ async function submitCheckin() {
     return; 
   }
   
+  // EKSİK OLAN VE TAMAMLANAN KISIM BURASI:
   const veri = { mood: parseInt(mood), notes: notes };
   
   await saveCheckin('gunluk_rapor', veri);
@@ -2553,6 +2554,8 @@ async function submitCheckin() {
   document.getElementById('ci-mood').value = '';
   document.getElementById('ci-notes').value = '';
 }
+  
+
 
 // ── QUEST MODAL ──
 function renderQuestModal() {
