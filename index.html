@@ -2716,6 +2716,12 @@ async function submitAksam() {
   const kendimeNot = document.getElementById('a_kendime_not')?.value?.trim();
   const nineBox = document.getElementById('a_9box')?.value?.trim();
 
+  // Yanlışlıkla boş tıklamalara karşı küçük bir kalkan
+  if (!somut && !ogrendim && !kendimeNot) { 
+    toast('Günü kapatmadan önce en az bir alanı doldurmalısın kahraman!'); 
+    return; 
+  }
+
   const veri = { 
     tur: 'Akşam Ritüeli', 
     puanlar: { performans: parseInt(perf), enerji: parseInt(enerji), bag: parseInt(bag), buyume: parseInt(buyume) },
@@ -2729,10 +2735,24 @@ async function submitAksam() {
   await saveCheckin('aksam_rutini', veri);
   toast('🌙 Alacakaranlık Ritüeli tamamlandı. İyi dinlenmeler!');
   
+  // XP ve Seviye Atlama Kontrolü
+  const prevLevel = getLevelFromXP(state.xp).level;
   state.xp += 25;
+  const newLvl = getLevelFromXP(state.xp).level;
+  
+  if (newLvl > prevLevel) {
+    newLevel = newLvl;
+    showLevelUp = true;
+    spawnBurstParticles();
+  }
+
   floatXP(25);
   checkAchievements();
   saveState(state);
+  
+  // GÜNÜ GERÇEKTEN KAPATAN KISIM:
+  activeTab = 'quests';   // Görevler sekmesine geri dön
+  checkinMode = 'sabah';  // Ritüeli yarın sabah için hazırla
   
   render();
 }
