@@ -1214,18 +1214,24 @@ let sbClient = null;
 let currentUser = null;
 
 async function saveCheckin(tip, veri) {
-  if (!currentUser) return;
-  try {
-    await sbClient
-      .from('checkins')
-      .upsert({
-        user_id: currentUser.id,
-        tarih: new Date().toISOString().split('T')[0],
-        tip: tip,
-        veri: veri
-      }, { onConflict: 'user_id,tarih,tip' });
-  } catch(e) {
-    console.warn('Check-in kayıt hatası:', e);
+  if (!currentUser) {
+    toast('Hata: Giriş yapılmamış!');
+    return;
+  }
+  
+  const { data, error } = await sbClient
+    .from('checkins')
+    .upsert({
+      user_id: currentUser.id,
+      tarih: new Date().toISOString().split('T')[0],
+      tip: tip,
+      veri: veri
+    }, { onConflict: 'user_id,tarih,tip' });
+
+  if (error) {
+    // Supabase'in gizli hatasını ekrana basıyoruz
+    toast('Supabase Hatası: ' + error.message);
+    console.error('Supabase detaylı hata:', error);
   }
 }
 
