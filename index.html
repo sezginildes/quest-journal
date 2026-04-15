@@ -321,7 +321,7 @@ body {
   gap: 8px;
 }
 
-/* QUICK ADD BAR (NEW) */
+/* QUICK ADD BAR */
 .quick-add-wrap {
   display: flex; gap: 10px; margin-bottom: 20px;
 }
@@ -399,7 +399,7 @@ body {
 .matrix-card.dragging { opacity: 0.5; cursor: grabbing; }
 .matrix-quadrant.drag-over { box-shadow: inset 0 0 0 2px var(--gold); }
 
-/* CARD ACTIONS (HIDDEN BY DEFAULT) */
+/* CARD ACTIONS */
 .card-actions {
   display: flex; gap: 6px; flex-wrap: wrap;
   opacity: 0;
@@ -1199,6 +1199,51 @@ let sbClient = null;
 
 let currentUser = null;
 
+async function saveCheckin(tip, veri) {
+  if (!currentUser) return;
+  try {
+    await sbClient
+      .from('checkins')
+      .upsert({
+        user_id: currentUser.id,
+        tarih: new Date().toISOString().split('T')[0],
+        tip: tip,
+        veri: veri
+      }, { onConflict: 'user_id,tarih,tip' });
+  } catch(e) {
+    console.warn('Check-in kayıt hatası:', e);
+  }
+}
+
+async function getCheckins(gun = 7) {
+  if (!currentUser) return [];
+  const { data } = await sbClient
+    .from('checkins')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('tarih', { ascending: false })
+    .limit(gun * 2);
+  return data || [];
+}
+
+async function logToSupabase(data) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/quest_logs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) console.warn('Supabase log hatası:', await res.text());
+  } catch(e) {
+    console.warn('Supabase bağlantı hatası:', e);
+  }
+}
+
 function renderAuthScreen() {
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -1278,60 +1323,9 @@ async function saveCharacterToCloud(userId, characterData) {
   }
 }
 
-async function logToSupabase(data) {
-  
-  async function saveCheckin(tip, veri) {
-  if (!currentUser) return;
-  try {
-    await sbClient
-      .from('checkins')
-      .upsert({
-        user_id: currentUser.id,
-        tarih: new Date().toISOString().split('T')[0],
-        tip: tip,
-        veri: veri
-      }, { onConflict: 'user_id,tarih,tip' });
-  } catch(e) {
-    console.warn('Check-in kayıt hatası:', e);
-  }
-}
-
-async function getCheckins(gun = 7) {
-  if (!currentUser) return [];
-  const { data } = await sbClient
-    .from('checkins')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('tarih', { ascending: false })
-    .limit(gun * 2);
-  return data || [];
-}
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/quest_logs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) console.warn('Supabase log hatası:', await res.text());
-  } catch(e) {
-    console.warn('Supabase bağlantı hatası:', e);
-  }
-}
-
 async function initAuth() {
   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  if (window.location.hash.startsWith('#access_token') || window.location.href.includes('##access_token')) {
-    const fixedHash = window.location.hash.replace(/^#+/, '#');
-    if (fixedHash !== window.location.hash) {
-      window.location.hash = fixedHash.substring(1);
-    }
-  }
   const { data: { session } } = await sbClient.auth.getSession();
   
   if (session?.user) {
@@ -1606,16 +1600,15 @@ function initParticles() {
 function updateStreak() {
   const today = new Date().toDateString();
   const yesterday = new Date(Date.now() - 86400000).toDateString();
-  const twoDaysAgo = new Date(Date.now() - 86400000 * 2).toDateString(); // Affetme payı
+  const twoDaysAgo = new Date(Date.now() - 86400000 * 2).toDateString();
 
   if (!state.lastQuestDate) {
     state.streak = 1;
   } else if (state.lastQuestDate === today) {
-    // Aynı gün, değişiklik yok
+    // Aynı gün
   } else if (state.lastQuestDate === yesterday) {
     state.streak++;
   } else if (state.lastQuestDate === twoDaysAgo) {
-    // DÜN GİRİLMEDİ AMA SERİ KIRILMADI (ADHD Affetme Mekaniği)
     state.streak++; 
     toast('❄️ İrade Kalkanı devreye girdi! Serin bozulmadı.');
   } else {
@@ -1666,17 +1659,12 @@ function rollReward(difficulty) {
   return { ...reward, tier };
 }
 
-// ─────────────────────────────────────────────
-// QUICK ADD LOGIC (Yeni)
-// ─────────────────────────────────────────────
-
 function quickAddQuest() {
   const input = document.getElementById('quick-quest-input');
   if (!input) return;
   const title = input.value.trim();
   if (!title) return;
   
-  // Varsayılan değerlerle anında ekle
   const quest = {
     id: state.nextQuestId++,
     title: title,
@@ -1686,7 +1674,7 @@ function quickAddQuest() {
     difficulty: 'medium', 
     dueDate: null,
     color: getCatColor('zihin'),
-    matrix: 'q2', // Önemli ama acil değil bölgesine gider
+    matrix: 'q2',
     createdAt: new Date().toLocaleDateString()
   };
   
@@ -1742,7 +1730,6 @@ function completeQuest(questId) {
   state.completedQuests.unshift(quest);
   if (state.completedQuests.length > 50) state.completedQuests.pop();
 
-  // 🔄 YENİDEN DOĞUŞ MANTIĞI: Eğer görev tekrarlıysa, bir kopyasını yarat!
   if (quest.recur) {
     let nextDue = null;
     if (quest.dueDate) {
@@ -1812,7 +1799,7 @@ function addQuest(data) {
     subCategory: data.subCategory || null,
     difficulty: data.difficulty,
     dueDate: data.dueDate || null,
-    recur: data.recur || '', // <-- TEKRAR VERİSİ EKLENDİ
+    recur: data.recur || '',
     color: data.color || getCatColor(data.category),
     matrix: data.matrix || 'q2',
     createdAt: new Date().toLocaleDateString()
@@ -1824,8 +1811,20 @@ function addQuest(data) {
 }
 
 // ─────────────────────────────────────────────
-// VISUAL FX
+// VISUAL FX & UTILS
 // ─────────────────────────────────────────────
+
+function checkAchievements() {
+  let newUnlock = false;
+  ACHIEVEMENTS.forEach(a => {
+    if (!state.achievements.includes(a.id) && a.condition(state)) {
+      state.achievements.push(a.id);
+      toast(`🏆 Başarım Kazanıldı: ${a.name}`);
+      newUnlock = true;
+    }
+  });
+  if (newUnlock) saveState(state);
+}
 
 function floatXP(amount) {
   const el = document.createElement('div');
@@ -1929,8 +1928,7 @@ function undoFromLog(logIdx) {
 }
 
 // ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// FOCUS MODE (Mutlak Zaman & Zaman Kumbarası)
+// FOCUS MODE
 // ─────────────────────────────────────────────
 
 let focusTimer = null;
@@ -2171,6 +2169,7 @@ function renderFocusMode(quest) {
 function focusKeyHandler(e) {
   if (e.key === 'Escape') exitFocus();
 }
+
 function render() {
   const app = document.getElementById('app');
   if (showSetup) { renderSetup(app); return; }
@@ -2213,7 +2212,7 @@ function render() {
     </div>
 
     <div class="nav-tabs">
-      ${['quests','character','achievements','rewards','stats'].map(t => `
+      ${['quests','character','achievements','rewards','stats','checkin'].map(t => `
         <button class="tab-btn ${activeTab === t ? 'active' : ''}" onclick="switchTab('${t}')">${tabLabel(t)}</button>
       `).join('')}
     </div>
@@ -2232,7 +2231,15 @@ function render() {
 }
 
 function tabLabel(t) {
-  return { quests: '⚔️ Görevler', character: '🧙 Karakter', achievements: '🏆 Başarımlar', rewards: '🎁 Ödüller', stats: '📊 Tarih', settings: '⚙️ Ayarlar' }[t];
+  return { 
+    quests: '⚔️ Görevler', 
+    character: '🧙 Karakter', 
+    achievements: '🏆 Başarımlar', 
+    rewards: '🎁 Ödüller', 
+    stats: '📊 Tarih', 
+    checkin: '📓 Check-in', 
+    settings: '⚙️ Ayarlar' 
+  }[t];
 }
 
 function switchTab(t) { activeTab = t; render(); }
@@ -2243,6 +2250,7 @@ function renderTab() {
   if (activeTab === 'achievements') return renderAchievementsTab();
   if (activeTab === 'rewards') return renderRewardsTab();
   if (activeTab === 'stats') return renderStatsTab();
+  if (activeTab === 'checkin') return renderCheckinTab();
   if (activeTab === 'settings') return renderSettingsTab();
   return '';
 }
@@ -2501,6 +2509,51 @@ function renderStatsTab() {
   `;
 }
 
+// ── CHECK-IN TAB ──
+function renderCheckinTab() {
+  return `
+    <div style="max-width:600px; margin: 0 auto;">
+      <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:var(--red-ink);border-bottom:2px solid var(--red-ink);padding-bottom:8px;margin-bottom:20px;letter-spacing:2px">📓 KAMP ATEŞİ GÜNLÜĞÜ (CHECK-IN)</h2>
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:20px;font-size:1rem">Günün nasıl geçti? Zihnini ve bedenini dinle, efsanenin bu bölümünü kayıt altına al.</p>
+      
+      <div class="form-group">
+        <label class="form-label">Günün Enerjisi (1-10)</label>
+        <input type="number" min="1" max="10" class="form-input" id="ci-mood" placeholder="Örn: 8" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Günün Özeti / Düşünceler</label>
+        <textarea class="form-textarea" id="ci-notes" placeholder="Bugün neler öğrendin, nelerde zorlandın? Zihninden geçenleri buraya dök..."></textarea>
+      </div>
+      
+      <button class="btn-sign" onclick="submitCheckin()">✒ Günlüğe Kaydet ✒</button>
+      
+      <div style="margin-top:30px; text-align:center; opacity:0.6;">
+        <span style="font-size:3rem;">⛺🔥</span>
+        <div style="font-family:'Caveat',cursive; color:var(--brown-mid); margin-top:8px;">Ateşin başında dinlen, yarın yeni savaşlar seni bekliyor...</div>
+      </div>
+    </div>
+  `;
+}
+
+async function submitCheckin() {
+  const mood = document.getElementById('ci-mood')?.value;
+  const notes = document.getElementById('ci-notes')?.value?.trim();
+  
+  if (!mood || !notes) { 
+    toast('Tüm alanları doldurmalısın, kahraman!'); 
+    return; 
+  }
+  
+  const veri = { mood: parseInt(mood), notes: notes };
+  
+  await saveCheckin('gunluk_rapor', veri);
+  
+  toast('📓 Check-in Supabase\'e kaydedildi!');
+  
+  document.getElementById('ci-mood').value = '';
+  document.getElementById('ci-notes').value = '';
+}
+
 // ── QUEST MODAL ──
 function renderQuestModal() {
   return `
@@ -2604,6 +2657,11 @@ function dropOnCard(event, targetQuestId, matrixId) {
   event.stopPropagation();
   if (!draggedQuestId || draggedQuestId === targetQuestId) return;
 
+  const draggedQuest = state.quests.find(q => q.id === draggedQuestId);
+  if (!draggedQuest) return;
+
+  draggedQuest.matrix = matrixId;
+
   const inMatrix = state.quests
     .filter(q => (q.matrix || 'q2') === matrixId)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -2611,10 +2669,7 @@ function dropOnCard(event, targetQuestId, matrixId) {
   const fromIdx = inMatrix.findIndex(q => q.id === draggedQuestId);
   const toIdx = inMatrix.findIndex(q => q.id === targetQuestId);
 
-  if (fromIdx === -1 || toIdx === -1) {
-    const q = state.quests.find(q => q.id === draggedQuestId);
-    if (q) { q.matrix = matrixId; q.order = toIdx * 10; }
-  } else {
+  if (fromIdx !== -1 && toIdx !== -1) {
     const moved = inMatrix.splice(fromIdx, 1)[0];
     inMatrix.splice(toIdx, 0, moved);
     inMatrix.forEach((q, i) => { q.order = i * 10; });
@@ -2655,7 +2710,7 @@ function submitQuest() {
   const subcat = document.getElementById('q-subcat')?.value || null;
   const diff = document.getElementById('q-diff')?.value;
   const due = document.getElementById('q-due')?.value;
-  const recur = document.getElementById('q-recur')?.value || ''; // <-- SEÇİM BURADAN ALINIYOR
+  const recur = document.getElementById('q-recur')?.value || '';
   const matrix = document.getElementById('q-matrix')?.value || 'q2';
   
   if (!title || !cat || !diff) { toast('Tüm zorunlu alanları doldur!'); return; }
@@ -2664,6 +2719,7 @@ function submitQuest() {
   showQuestModal = false;
   addQuest({ title, description: desc, category: cat, subCategory: subcat, difficulty: diff, dueDate: due, recur: recur, color: catColor, matrix });
 }
+
 function copyQuest(questId) {
   const q = state.quests.find(q => q.id === questId);
   if (!q) return;
