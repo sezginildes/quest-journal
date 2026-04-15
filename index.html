@@ -1181,6 +1181,20 @@ body {
 /* No reward face */
 .no-reward-face { font-size: 3rem; margin: 16px 0; }
 .no-reward-text { font-family: 'Caveat', cursive; font-size: 1.1rem; color: var(--brown-light); font-style: italic; }
+
+/* CHECKIN TABS */
+.checkin-btn {
+  flex: 1; padding: 12px; font-family: 'Cinzel', serif; font-weight: bold; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size:0.9rem;
+}
+.checkin-btn.sabah { background: rgba(212,175,55,0.1); color: var(--brown-dark); border: 2px solid rgba(212,175,55,0.3); }
+.checkin-btn.sabah.active { background: var(--gold); color: var(--brown-deep); border-color: var(--gold); box-shadow: 0 4px 10px rgba(212,175,55,0.3); }
+.checkin-btn.aksam { background: rgba(45,45,107,0.1); color: var(--brown-dark); border: 2px solid rgba(45,45,107,0.3); }
+.checkin-btn.aksam.active { background: var(--magic-blue); color: var(--parchment-light); border-color: var(--magic-blue); box-shadow: 0 4px 10px rgba(45,45,107,0.3); }
+
+.radio-group { display: flex; gap: 12px; }
+.radio-label { cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: 'Cinzel', serif; font-weight: 600; color: var(--brown-dark); background: rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 4px; border: 1px solid rgba(74,55,40,0.2); transition: all 0.2s; }
+.radio-label:hover { background: rgba(212,175,55,0.1); }
+.radio-label input:checked + span { color: var(--gold-bright); text-shadow: 0 0 5px rgba(212,175,55,0.5); }
 </style>
 </head>
 <body>
@@ -1573,6 +1587,7 @@ let newLevel = 1;
 let currentToast = null;
 let lastCompletedQuest = null; 
 let undoTimer = null;
+let checkinMode = 'sabah'; // EKLENEN STATE
 
 // ─────────────────────────────────────────────
 // PARTICLES
@@ -1594,7 +1609,7 @@ function initParticles() {
 }
 
 // ─────────────────────────────────────────────
-// STREAK LOGIC (Şefkatli Seri Koruması)
+// STREAK LOGIC
 // ─────────────────────────────────────────────
 
 function updateStreak() {
@@ -2237,7 +2252,7 @@ function tabLabel(t) {
     achievements: '🏆 Başarımlar', 
     rewards: '🎁 Ödüller', 
     stats: '📊 Tarih', 
-    checkin: '📓 Check-in', 
+    checkin: '📓 Ritüeller', 
     settings: '⚙️ Ayarlar' 
   }[t];
 }
@@ -2509,53 +2524,218 @@ function renderStatsTab() {
   `;
 }
 
-// ── CHECK-IN TAB ──
+// ── RITUALS (CHECK-IN) TAB (EXCEL ENTEGRASYONU) ──
 function renderCheckinTab() {
   return `
-    <div style="max-width:600px; margin: 0 auto;">
-      <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:var(--red-ink);border-bottom:2px solid var(--red-ink);padding-bottom:8px;margin-bottom:20px;letter-spacing:2px">📓 KAMP ATEŞİ GÜNLÜĞÜ (CHECK-IN)</h2>
-      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:20px;font-size:1rem">Günün nasıl geçti? Zihnini ve bedenini dinle, efsanenin bu bölümünü kayıt altına al.</p>
+    <div style="max-width:700px; margin: 0 auto; padding-bottom:40px;">
+      <h2 style="font-family:'Cinzel',serif;font-size:1.2rem;color:var(--red-ink);border-bottom:2px solid var(--red-ink);padding-bottom:8px;margin-bottom:20px;letter-spacing:2px">📓 MENTORÜN GÜNLÜĞÜ</h2>
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:24px;font-size:1rem; text-align:center;">"33 ruhun rehberi olarak, önce kendi zihnini hizala..."</p>
       
-      <div class="form-group">
-        <label class="form-label">Günün Enerjisi (1-10)</label>
-        <input type="number" min="1" max="10" class="form-input" id="ci-mood" placeholder="Örn: 8" />
+      <div style="display:flex; gap:12px; margin-bottom:24px;">
+        <button class="checkin-btn sabah ${checkinMode === 'sabah' ? 'active' : ''}" onclick="checkinMode='sabah'; render();">☀️ Şafak Ritüeli</button>
+        <button class="checkin-btn aksam ${checkinMode === 'aksam' ? 'active' : ''}" onclick="checkinMode='aksam'; render();">🌙 Alacakaranlık Ritüeli</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Günün Özeti / Düşünceler</label>
-        <textarea class="form-textarea" id="ci-notes" placeholder="Bugün neler öğrendin, nelerde zorlandın? Zihninden geçenleri buraya dök..."></textarea>
-      </div>
-      
-      <button class="btn-sign" onclick="submitCheckin()">✒ Günlüğe Kaydet ✒</button>
-      
-      <div style="margin-top:30px; text-align:center; opacity:0.6;">
-        <span style="font-size:3rem;">⛺🔥</span>
-        <div style="font-family:'Caveat',cursive; color:var(--brown-mid); margin-top:8px;">Ateşin başında dinlen, yarın yeni savaşlar seni bekliyor...</div>
-      </div>
+
+      ${checkinMode === 'sabah' ? renderSabahFormu() : renderAksamFormu()}
     </div>
   `;
 }
 
-async function submitCheckin() {
-  const mood = document.getElementById('ci-mood')?.value;
-  const notes = document.getElementById('ci-notes')?.value?.trim();
-  
-  if (!mood || !notes) { 
-    toast('Tüm alanları doldurmalısın, kahraman!'); 
-    return; 
-  }
-  
-  // EKSİK OLAN VE TAMAMLANAN KISIM BURASI:
-  const veri = { mood: parseInt(mood), notes: notes };
-  
-  await saveCheckin('gunluk_rapor', veri);
-  
-  toast('📓 Check-in Supabase\'e kaydedildi!');
-  
-  document.getElementById('ci-mood').value = '';
-  document.getElementById('ci-notes').value = '';
-}
-  
+function renderSabahFormu() {
+  return `
+    <div style="animation: fadeIn 0.3s ease; background:rgba(255,255,255,0.2); padding:24px; border-radius:8px; border:1px solid rgba(212,175,55,0.3);">
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:20px;font-size:1.1rem">"Her sabah aynı saatte. Kahven hazır, 3 soru, 1 niyet."</p>
+      
+      <div class="form-group">
+        <label class="form-label">Bu sabahki niyet puanın (1-5)</label>
+        <div class="radio-group">
+          ${[1,2,3,4,5].map(n => `
+            <label class="radio-label">
+              <input type="radio" name="s_niyet_puan" value="${n}" style="display:none;" ${n===3?'checked':''} onchange="this.parentElement.parentElement.querySelectorAll('label').forEach(l=>l.style.background='rgba(255,255,255,0.4)'); this.parentElement.style.background='rgba(212,175,55,0.2)'">
+              <span>${n}</span>
+            </label>`).join('')}
+        </div>
+      </div>
 
+      <div class="form-group">
+        <label class="form-label">Bu sabah nasıl hissediyorum?</label>
+        <div style="font-size:0.75rem; color:var(--brown-light); margin-bottom:4px; font-style:italic;">Bedenim, zihinim, enerjim. Tek kelime veya cümle yeterli.</div>
+        <textarea class="form-textarea" id="s_his" placeholder="Örn: Yorgun hissettim, hiç işe gidesim yok..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bugün yapmam gereken en önemli TEK şey nedir?</label>
+        <input type="text" class="form-input" id="s_teksey" placeholder="Örn: Dışarı çıkıp, çiçek ve ayakkabı almak..." />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bugün kim için gerçekten orada olmak istiyorum?</label>
+        <div style="font-size:0.75rem; color:var(--brown-light); margin-bottom:4px; font-style:italic;">Bir öğrenci, bir kişi veya kendim. Sadece bir tane.</div>
+        <input type="text" class="form-input" id="s_kisi" placeholder="İsim veya rol..." />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bu gün için niyetim nedir?</label>
+        <input type="text" class="form-input" id="s_niyet_cumle" placeholder="Bugün ____ olmak istiyorum." />
+      </div>
+
+      <button class="btn-sign" style="margin-top:16px;" onclick="submitSabah()">☀️ Güne Başla ☀️</button>
+    </div>
+  `;
+}
+
+function renderAksamFormu() {
+  return `
+    <div style="animation: fadeIn 0.3s ease; background:rgba(45,45,107,0.05); padding:24px; border-radius:8px; border:1px solid rgba(45,45,107,0.2);">
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--brown-mid);margin-bottom:20px;font-size:1.1rem">"Gün bitmeden önce. Dürüstçe, hızlı. Güzel görünmek zorunda değilsin."</p>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; background:rgba(255,255,255,0.4); padding:16px; border-radius:8px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="color:var(--magic-blue);">Performans (1-5)</label>
+          <select class="form-select" id="a_perf"><option value="1">1 - Çok Düşük</option><option value="2">2 - Düşük</option><option value="3" selected>3 - Normal</option><option value="4">4 - İyi</option><option value="5">5 - Mükemmel</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="color:var(--magic-blue);">Enerji (1-5)</label>
+          <select class="form-select" id="a_enerji"><option value="1">1 - Tükendim</option><option value="2">2 - Yorgunum</option><option value="3" selected>3 - İdare Eder</option><option value="4">4 - Canlı</option><option value="5">5 - Zirvede</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="color:var(--magic-blue);">Bağ & İlişki (1-5)</label>
+          <select class="form-select" id="a_bag"><option value="1">1 - Kopuk</option><option value="2">2 - Mesafeli</option><option value="3" selected>3 - Temasta</option><option value="4">4 - Yakın</option><option value="5">5 - Çok Derin</option></select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="color:var(--magic-blue);">Büyüme (1-5)</label>
+          <select class="form-select" id="a_buyume"><option value="1">1 - Sabit</option><option value="2">2 - Yavaş</option><option value="3" selected>3 - Öğrendim</option><option value="4">4 - Geliştim</option><option value="5">5 - Dönüştüm</option></select>
+        </div>
+      </div>
+
+      <div style="border-left: 3px solid #c0392b; padding-left:12px; margin-bottom:20px;">
+        <div class="form-label" style="color:#c0392b; margin-bottom:8px;">PERFORMANS</div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bugün tamamladığım en somut şey neydi?</div>
+          <input type="text" class="form-input" id="a_somut" placeholder="Küçük de olsa, büyük de. Sadece bir şey." />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bir öğrenciyle gerçek bir an yaşadım mı?</div>
+          <input type="text" class="form-input" id="a_ogrenci_an" placeholder="Gözünde kalan, seni etkileyen bir an. Yoksa da yaz." />
+        </div>
+      </div>
+
+      <div style="border-left: 3px solid #f39c12; padding-left:12px; margin-bottom:20px;">
+        <div class="form-label" style="color:#f39c12; margin-bottom:8px;">ENERJİ</div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bugün beni en çok ne doldurdu?</div>
+          <input type="text" class="form-input" id="a_doldurdu" placeholder="Bir öğrenci, bir an, bir cümle, bir his." />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Beni en çok ne boşalttı?</div>
+          <input type="text" class="form-input" id="a_bosaltti" placeholder="Dürüst ol. Bu bilgi sana yol gösterir." />
+        </div>
+      </div>
+
+      <div style="border-left: 3px solid #9b59b6; padding-left:12px; margin-bottom:20px;">
+        <div class="form-label" style="color:#9b59b6; margin-bottom:8px;">İLİŞKİ</div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bugün bir öğrenciye gerçekten orada olabildin mi?</div>
+          <input type="text" class="form-input" id="a_orada_miydim" placeholder="Evet ise kim, nasıl? Hayır ise neden?" />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Birinden bir sinyal aldım — ne oldu?</div>
+          <input type="text" class="form-input" id="a_sinyal" placeholder="Söylenen, söylenmeyen, beden dili, kaçınma." />
+        </div>
+      </div>
+
+      <div style="border-left: 3px solid #27ae60; padding-left:12px; margin-bottom:20px;">
+        <div class="form-label" style="color:#27ae60; margin-bottom:8px;">BÜYÜME & YANSIMA</div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bugün bir şey öğrendim mi — ne?</div>
+          <input type="text" class="form-input" id="a_ogrendim" placeholder="Küçük bir fark et de olur. Yoksa onu da yaz." />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Yarın farklı yapacağım bir şey var mı?</div>
+          <input type="text" class="form-input" id="a_yarin" placeholder="Somut ve küçük. Bir sonraki güne taşınan tek şey." />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bu gün için niyetimde ne kadar kalabildim?</div>
+          <input type="text" class="form-input" id="a_niyet_kaldim_mi" placeholder="Sabah yazdığın niyeti hatırla. Oldu mu, olmadı mı?" />
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Bu akşam kendime söylemek istediğim bir şey var mı?</div>
+          <textarea class="form-textarea" id="a_kendime_not" placeholder="Eleştiri değil. Sana dön..."></textarea>
+        </div>
+        <div class="form-group">
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">9-Box Kutum (İsteğe bağlı)</div>
+          <input type="text" class="form-input" id="a_9box" placeholder="Örn: Yüksek Performans / Orta Potansiyel" />
+        </div>
+      </div>
+
+      <button class="btn-sign" style="background: linear-gradient(135deg, var(--magic-blue), var(--midnight)); box-shadow: 0 4px 15px rgba(45,45,107,0.4); margin-top:16px;" onclick="submitAksam()">🌙 Günü Kapat 🌙</button>
+    </div>
+  `;
+}
+
+async function submitSabah() {
+  const niyetPuan = document.querySelector('input[name="s_niyet_puan"]:checked')?.value || 3;
+  const his = document.getElementById('s_his')?.value?.trim();
+  const tekSey = document.getElementById('s_teksey')?.value?.trim();
+  const kisi = document.getElementById('s_kisi')?.value?.trim();
+  const niyetCumle = document.getElementById('s_niyet_cumle')?.value?.trim();
+
+  if (!niyetCumle && !tekSey) { toast('En azından bir odak noktası veya niyet belirle kahraman!'); return; }
+
+  const veri = { 
+    tur: 'Sabah Ritüeli', 
+    niyet_puan: parseInt(niyetPuan), 
+    hissiyat: his, 
+    en_onemli_tek_sey: tekSey, 
+    odak_kisi: kisi, 
+    gunun_niyeti: niyetCumle 
+  };
+  
+  await saveCheckin('sabah_rutini', veri);
+  toast('☀️ Şafak Ritüeli kaydedildi! Görevlerin seni bekliyor.');
+  
+  checkinMode = 'aksam';
+  render();
+}
+
+async function submitAksam() {
+  const perf = document.getElementById('a_perf')?.value;
+  const enerji = document.getElementById('a_enerji')?.value;
+  const bag = document.getElementById('a_bag')?.value;
+  const buyume = document.getElementById('a_buyume')?.value;
+  
+  const somut = document.getElementById('a_somut')?.value?.trim();
+  const ogrenciAn = document.getElementById('a_ogrenci_an')?.value?.trim();
+  const doldurdu = document.getElementById('a_doldurdu')?.value?.trim();
+  const bosaltti = document.getElementById('a_bosaltti')?.value?.trim();
+  const oradaMiydim = document.getElementById('a_orada_miydim')?.value?.trim();
+  const sinyal = document.getElementById('a_sinyal')?.value?.trim();
+  const ogrendim = document.getElementById('a_ogrendim')?.value?.trim();
+  const yarin = document.getElementById('a_yarin')?.value?.trim();
+  const niyetKaldimMi = document.getElementById('a_niyet_kaldim_mi')?.value?.trim();
+  const kendimeNot = document.getElementById('a_kendime_not')?.value?.trim();
+  const nineBox = document.getElementById('a_9box')?.value?.trim();
+
+  const veri = { 
+    tur: 'Akşam Ritüeli', 
+    puanlar: { performans: parseInt(perf), enerji: parseInt(enerji), bag: parseInt(bag), buyume: parseInt(buyume) },
+    performans: { somut_basari: somut, ogrenciyle_an: ogrenciAn },
+    enerji: { dolduran: doldurdu, bosaltan: bosaltti },
+    iliski: { orada_miydim: oradaMiydim, alinan_sinyal: sinyal },
+    buyume: { ogrenilen: ogrendim, yarina_tasinacak: yarin },
+    yansima: { niyette_kalindi_mi: niyetKaldimMi, kendime_not: kendimeNot, dokuz_kutu: nineBox }
+  };
+  
+  await saveCheckin('aksam_rutini', veri);
+  toast('🌙 Alacakaranlık Ritüeli tamamlandı. İyi dinlenmeler!');
+  
+  state.xp += 25;
+  floatXP(25);
+  checkAchievements();
+  saveState(state);
+  
+  render();
+}
 
 // ── QUEST MODAL ──
 function renderQuestModal() {
