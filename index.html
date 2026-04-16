@@ -2669,8 +2669,19 @@ function renderAksamFormu() {
           <textarea class="form-textarea" id="a_kendime_not" placeholder="Eleştiri değil. Sana dön..."></textarea>
         </div>
         <div class="form-group">
-          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">9-Box Kutum (İsteğe bağlı)</div>
-          <input type="text" class="form-input" id="a_9box" placeholder="Örn: Yüksek Performans / Orta Potansiyel" />
+          <div style="font-size:0.75rem; color:var(--brown-dark); margin-bottom:4px; font-weight:bold;">Günün Arketipi (9-Box)</div>
+          <select class="form-select" id="a_9box">
+            <option value="">— Ruh Halini Seç —</option>
+            <option value="Aslan (Yük. Perf / Yük. Pot)">🦁 Aslan (Yıldız / Lider)</option>
+            <option value="Kaplan (Yük. Perf / Orta Pot)">🐅 Kaplan (Uzman / Keskin Odak)</option>
+            <option value="Fil (Yük. Perf / Düşük Pot)">🐘 Fil (Sarsılmaz Kalkan / Bilge)</option>
+            <option value="Ceylan (Orta Perf / Yük. Pot)">🦌 Ceylan (Hızlı Yükselen)</option>
+            <option value="Kurt (Orta Perf / Orta Pot)">🐺 Kurt (Kilit Oyuncu / Belkemiği)</option>
+            <option value="At (Orta Perf / Düşük Pot)">🐴 At (Sadık Emekçi / Güvenilir)</option>
+            <option value="Kartal Yavrusu (Düşük Perf / Yük. Pot)">🦅 Kartal Yavrusu (İşlenmemiş Cevher)</option>
+            <option value="Bukalemun (Düşük Perf / Orta Pot)">🦎 Bukalemun (Tutarsız / Yön Arayan)</option>
+            <option value="Kaplumbağa (Düşük Perf / Düşük Pot)">🐢 Kaplumbağa (Yorgun / Dinlenmeli)</option>
+          </select>
         </div>
       </div>
 
@@ -2703,6 +2714,7 @@ async function submitSabah() {
   checkinMode = 'aksam';
   render();
 }
+
 async function saveCheckin(tip, veri) {
   if (!currentUser) {
     alert("HATA: Oturum kapalı görünüyor!");
@@ -2785,7 +2797,6 @@ async function submitAksam() {
   checkinMode = 'sabah'; 
   render(); 
 }
- 
 
 // ── QUEST MODAL ──
 function renderQuestModal() {
